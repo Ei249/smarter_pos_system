@@ -69,7 +69,7 @@ class _MainNavigatorState extends State<MainNavigator> {
 }
 
 // ==========================================
-// 页面 1：打卡页 (保留你刚才写的联网功能)
+// 页面 1：打卡页 (完美闭环版：包含上下班切换)
 // ==========================================
 class PunchCardScreen extends StatefulWidget {
   const PunchCardScreen({super.key});
@@ -79,18 +79,23 @@ class PunchCardScreen extends StatefulWidget {
 }
 
 class _PunchCardScreenState extends State<PunchCardScreen> {
-  String _statusMessage = "Welcome back, Zhe Wei!";
+  String _statusMessage = "Welcome back, Zhe Wei! Ready for work?";
   bool _isLoading = false;
+  bool _isClockedIn = false; // 新增：记录当前打卡状态
 
-  Future<void> _clockIn() async {
+  // 智能打卡函数：自动判断是请求 In 还是 Out
+  Future<void> _handlePunchCard() async {
     setState(() {
       _isLoading = true;
       _statusMessage = "Syncing with database...";
     });
 
     try {
+      // 如果还没上班，就打上班卡；如果已经上班，就打下班卡
+      String endpoint = _isClockedIn ? '/api/clock-out' : '/api/clock-in';
+      
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:5000/api/clock-in'),
+        Uri.parse('http://127.0.0.1:5000$endpoint'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'staff_id': 1}), 
       );
@@ -98,7 +103,19 @@ class _PunchCardScreenState extends State<PunchCardScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _statusMessage = "Success! Time: ${data['time']}";
+          if (_isClockedIn) {
+            // 下班成功，显示下班时间和计算出的总工时
+            _statusMessage = "Clocked OUT successfully!\nTime: ${data['time']}\nTotal Hours: ${data['total_hours']} hr";
+            _isClockedIn = false; // 状态切回未上班
+          } else {
+            // 上班成功，显示上班时间
+            _statusMessage = "Clocked IN successfully!\nTime: ${data['time']}";
+            _isClockedIn = true; // 状态切换为已上班
+          }
+        });
+      } else {
+        setState(() {
+          _statusMessage = "Error: Please check if you have an active session.";
         });
       }
     } catch (e) {
@@ -120,16 +137,23 @@ class _PunchCardScreenState extends State<PunchCardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.touch_app, size: 100, color: Colors.red),
+            // 图标颜色也会跟着状态变
+            Icon(Icons.touch_app, size: 100, color: _isClockedIn ? Colors.green : Colors.red),
             const SizedBox(height: 30),
-            Text(_statusMessage, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(_statusMessage, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, height: 1.5)),
             const SizedBox(height: 50),
             _isLoading 
                 ? const CircularProgressIndicator(color: Colors.red)
                 : ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15)),
-                    onPressed: _clockIn,
-                    child: const Text('CLOCK IN / OUT', style: TextStyle(fontSize: 20)),
+                    style: ElevatedButton.styleFrom(
+                      // 上班状态按钮变红，下班状态按钮变绿
+                      backgroundColor: _isClockedIn ? Colors.grey[700] : Colors.red, 
+                      foregroundColor: Colors.white, 
+                      padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15)
+                    ),
+                    onPressed: _handlePunchCard,
+                    // 按钮文字自动切换
+                    child: Text(_isClockedIn ? 'CLOCK OUT' : 'CLOCK IN', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   ),
           ],
         ),
