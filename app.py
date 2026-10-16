@@ -35,6 +35,35 @@ def clock_in():
         "message": f"Staff {staff_id} clocked in successfully!", 
         "time": current_time
     }), 200
+    
+# 下班打卡 API 接口
+@app.route('/api/clock-out', methods=['POST'])
+def clock_out():
+    data = request.get_json()
+    staff_id = data.get('staff_id')
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with sqlite3.connect('hr_system.db') as conn:
+        cursor = conn.cursor()
+        # 寻找该员工最新一条还没有下班时间的记录，并填入现在的下班时间
+        cursor.execute('''
+            UPDATE punch_card 
+            SET clock_out_time = ? 
+            WHERE record_id = (
+                SELECT record_id FROM punch_card 
+                WHERE staff_id = ? AND clock_out_time IS NULL 
+                ORDER BY record_id DESC LIMIT 1
+            )
+        ''', (current_time, staff_id))
+        conn.commit()
+        
+    # 为了演示，我们暂时直接返回 9 个小时，下周可以加入真实的时间差计算逻辑
+    return jsonify({
+        "status": "success", 
+        "message": f"Staff {staff_id} clocked out successfully!", 
+        "time": current_time,
+        "total_hours": 9 
+    }), 200
 
 if __name__ == '__main__':
     init_db()
