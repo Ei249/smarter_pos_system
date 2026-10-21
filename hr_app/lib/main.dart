@@ -177,29 +177,137 @@ class AttendanceHistoryScreen extends StatelessWidget {
 }
 
 // ==========================================
-// 页面 3：请假申请页 (UI 占位)
+// 页面 3：请假申请页 (Week 3 新增表单逻辑)
 // ==========================================
-class LeaveScreen extends StatelessWidget {
+class LeaveScreen extends StatefulWidget {
   const LeaveScreen({super.key});
+  @override
+  State<LeaveScreen> createState() => _LeaveScreenState();
+}
+
+class _LeaveScreenState extends State<LeaveScreen> {
+  String _selectedLeave = 'MC (Medical Certificate)';
+  final _startDateController = TextEditingController();
+  final _endDateController = TextEditingController();
+  String _statusMessage = '';
+
+  Future<void> _submitLeave() async {
+    final response = await http.post(
+      Uri.parse('http://127.0.0.1:5000/api/leave'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'staff_id': 1,
+        'leave_type': _selectedLeave,
+        'start_date': _startDateController.text,
+        'end_date': _endDateController.text,
+      }),
+    );
+    if (response.statusCode == 200) {
+      setState(() => _statusMessage = "Success: Application sent to HR!");
+      _startDateController.clear();
+      _endDateController.clear();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Leave Application (MC/AL/HL)'), backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-      body: const Center(child: Text('Next Week: Build Leave Form here.')),
+      appBar: AppBar(title: const Text('Leave Application'), backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Leave Type:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            DropdownButton<String>(
+              value: _selectedLeave,
+              isExpanded: true,
+              items: ['MC (Medical Certificate)', 'AL (Annual Leave)', 'UP (Unpaid Leave)', 'HL (Hospitalization)'].map((String value) {
+                return DropdownMenuItem<String>(value: value, child: Text(value));
+              }).toList(),
+              onChanged: (newValue) => setState(() => _selectedLeave = newValue!),
+            ),
+            const SizedBox(height: 20),
+            TextField(controller: _startDateController, decoration: const InputDecoration(labelText: 'Start Date (YYYY-MM-DD)', border: OutlineInputBorder())),
+            const SizedBox(height: 15),
+            TextField(controller: _endDateController, decoration: const InputDecoration(labelText: 'End Date (YYYY-MM-DD)', border: OutlineInputBorder())),
+            const SizedBox(height: 25),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, padding: const EdgeInsets.all(15)),
+                onPressed: _submitLeave,
+                child: const Text('SUBMIT APPLICATION', style: TextStyle(fontSize: 18)),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(_statusMessage, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+      ),
     );
   }
 }
 
 // ==========================================
-// 页面 4：薪水单页 (UI 占位)
+// 页面 4：薪水单页 (Week 3 新增展示逻辑)
 // ==========================================
-class PayslipScreen extends StatelessWidget {
+class PayslipScreen extends StatefulWidget {
   const PayslipScreen({super.key});
+  @override
+  State<PayslipScreen> createState() => _PayslipScreenState();
+}
+
+class _PayslipScreenState extends State<PayslipScreen> {
+  Map<String, dynamic>? _payslipData;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPayslip();
+  }
+
+  Future<void> _fetchPayslip() async {
+    final response = await http.post(
+      Uri.parse('http://127.0.0.1:5000/api/payslip'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'staff_id': 1}),
+    );
+    if (response.statusCode == 200) {
+      setState(() => _payslipData = jsonDecode(response.body));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My Payslip'), backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-      body: const Center(child: Text('Next Week: Calculate Salary & Commission.')),
+      appBar: AppBar(title: const Text('Monthly Payslip'), backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+      body: _payslipData == null 
+          ? const Center(child: CircularProgressIndicator(color: Colors.red))
+          : Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: Card(
+                elevation: 5,
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.account_balance_wallet, size: 60, color: Colors.red),
+                      const SizedBox(height: 10),
+                      const Text('October 2026', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      const Divider(height: 30, thickness: 2),
+                      ListTile(title: const Text('Basic Salary'), trailing: Text('RM ${_payslipData!['basic_salary']}')),
+                      ListTile(title: const Text('Overtime (OT)'), trailing: Text('RM ${_payslipData!['ot_pay']}')),
+                      ListTile(title: const Text('Bonus / Allowance'), trailing: Text('RM ${_payslipData!['bonus']}')),
+                      ListTile(title: const Text('EPF & SOCSO'), trailing: Text('- RM ${_payslipData!['epf_socso_deduction']}', style: const TextStyle(color: Colors.red))),
+                      const Divider(height: 30, thickness: 2),
+                      ListTile(title: const Text('NET PAY', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)), trailing: Text('RM ${_payslipData!['net_pay']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green))),
+                    ],
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }
