@@ -1,4 +1,4 @@
-// cSpell:ignore Haidilao socso SOCSO KWSP PERKESO
+// cSpell:ignore Haidilao socso SOCSO KWSP PERKESO Sutera
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -30,7 +30,7 @@ class HRApp extends StatelessWidget {
 }
 
 // ==========================================
-// 底部导航主框架 (使用 IndexedStack 保持页面状态)
+// 底部导航主框架 (切页面自动触发最新数据同步)
 // ==========================================
 class MainNavigator extends StatefulWidget {
   const MainNavigator({super.key});
@@ -43,14 +43,27 @@ class _MainNavigatorState extends State<MainNavigator> {
   int _currentIndex = 0;
 
   final GlobalKey<_AttendanceHistoryScreenState> _historyKey = GlobalKey();
+  final GlobalKey<_LeaveScreenState> _leaveKey = GlobalKey();
+  final GlobalKey<_PayslipScreenState> _payslipKey = GlobalKey();
+  final GlobalKey<_ProfileAdminScreenState> _profileKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
-      PunchCardScreen(onPunchSuccess: () => _historyKey.currentState?.fetchHistory()),
+      PunchCardScreen(onPunchSuccess: () {
+        _historyKey.currentState?.fetchHistory();
+        _payslipKey.currentState?.fetchAllPayslips();
+      }),
       AttendanceHistoryScreen(key: _historyKey),
-      const LeaveScreen(),
-      const PayslipScreen(),
+      LeaveScreen(key: _leaveKey),
+      PayslipScreen(key: _payslipKey),
+      ProfileAdminScreen(
+        key: _profileKey,
+        onStatusChanged: () {
+          _leaveKey.currentState?.fetchLeaveHistory();
+          _payslipKey.currentState?.fetchAllPayslips();
+        },
+      ),
     ];
 
     return Scaffold(
@@ -71,15 +84,18 @@ class _MainNavigatorState extends State<MainNavigator> {
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           onTap: (index) {
             setState(() => _currentIndex = index);
-            if (index == 1) {
-              _historyKey.currentState?.fetchHistory();
-            }
+            // 每次切换底部标签时，自动刷新对应页面的最新后端数据！
+            if (index == 1) _historyKey.currentState?.fetchHistory();
+            if (index == 2) _leaveKey.currentState?.fetchLeaveHistory();
+            if (index == 3) _payslipKey.currentState?.fetchAllPayslips();
+            if (index == 4) _profileKey.currentState?.fetchPendingLeaves();
           },
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.fingerprint, size: 26), label: 'Clock In/Out'),
-            BottomNavigationBarItem(icon: Icon(Icons.history_edu, size: 26), label: 'Attendance'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month, size: 26), label: 'Leave'),
-            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet, size: 26), label: 'Payslip'),
+            BottomNavigationBarItem(icon: Icon(Icons.fingerprint, size: 25), label: 'Clock In'),
+            BottomNavigationBarItem(icon: Icon(Icons.history_edu, size: 25), label: 'Attendance'),
+            BottomNavigationBarItem(icon: Icon(Icons.calendar_month, size: 25), label: 'Leave'),
+            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet, size: 25), label: 'Payslip'),
+            BottomNavigationBarItem(icon: Icon(Icons.badge_outlined, size: 25), label: 'Profile'),
           ],
         ),
       ),
@@ -88,7 +104,7 @@ class _MainNavigatorState extends State<MainNavigator> {
 }
 
 // ==========================================
-// 页面 1：智能打卡页 (实时时钟 + 数据库状态同步)
+// 页面 1：智能打卡页
 // ==========================================
 class PunchCardScreen extends StatefulWidget {
   final VoidCallback onPunchSuccess;
@@ -228,7 +244,7 @@ class _PunchCardScreenState extends State<PunchCardScreen> {
                         children: [
                           Text('Ng Zhe Wei', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                           SizedBox(height: 4),
-                          Text('Staff ID: #HDL-001 • Service Crew', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                          Text('Staff ID: #HDL-001 • Sutera Branch', style: TextStyle(color: Colors.white70, fontSize: 13)),
                         ],
                       ),
                     ),
@@ -333,7 +349,7 @@ class _PunchCardScreenState extends State<PunchCardScreen> {
 }
 
 // ==========================================
-// 页面 2：考勤历史记录页 (商业级卡片列表)
+// 页面 2：考勤历史记录页
 // ==========================================
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -446,7 +462,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 }
 
 // ==========================================
-// 页面 3：请假申请页 (原生日历选择器 + 申请记录)
+// 页面 3：请假申请页 (支持动态颜色状态标签)
 // ==========================================
 class LeaveScreen extends StatefulWidget {
   const LeaveScreen({super.key});
@@ -471,7 +487,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchLeaveHistory();
+    fetchLeaveHistory();
   }
 
   String _formatDate(DateTime? d) {
@@ -534,16 +550,16 @@ class _LeaveScreenState extends State<LeaveScreen> {
         _endDate = null;
         _reasonController.clear();
       });
-      _fetchLeaveHistory();
+      fetchLeaveHistory();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Leave application submitted successfully!'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Leave application submitted! Go to Profile > Manager Mode to approve.'), backgroundColor: Colors.green),
         );
       }
     }
   }
 
-  Future<void> _fetchLeaveHistory() async {
+  Future<void> fetchLeaveHistory() async {
     try {
       final response = await http.post(
         Uri.parse('http://127.0.0.1:5000/api/leave-list'),
@@ -563,6 +579,9 @@ class _LeaveScreenState extends State<LeaveScreen> {
         title: const Text('Leave Management', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFFD32F2F),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: fetchLeaveHistory),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18.0),
@@ -682,6 +701,10 @@ class _LeaveScreenState extends State<LeaveScreen> {
                     itemCount: _leaveHistory.length,
                     itemBuilder: (context, index) {
                       final item = _leaveHistory[index];
+                      final status = item['status'];
+                      final isApproved = status == 'Approved';
+                      final isRejected = status == 'Rejected';
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -695,8 +718,18 @@ class _LeaveScreenState extends State<LeaveScreen> {
                           isThreeLine: true,
                           trailing: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(color: Colors.orange[100], borderRadius: BorderRadius.circular(8)),
-                            child: Text(item['status'], style: TextStyle(color: Colors.orange[900], fontWeight: FontWeight.bold, fontSize: 12)),
+                            decoration: BoxDecoration(
+                              color: isApproved ? Colors.green[100] : (isRejected ? Colors.red[100] : Colors.orange[100]),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                color: isApproved ? Colors.green[900] : (isRejected ? Colors.red[900] : Colors.orange[900]),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                         ),
                       );
@@ -730,7 +763,7 @@ class _LeaveScreenState extends State<LeaveScreen> {
 }
 
 // ==========================================
-// 页面 4：三级联动薪水单页 (选年份 ➔ 选月份 ➔ 看详情)
+// 页面 4：三级联动薪水单页 (带右上角强制刷新与 16 个月记录)
 // ==========================================
 class PayslipScreen extends StatefulWidget {
   const PayslipScreen({super.key});
@@ -746,10 +779,11 @@ class _PayslipScreenState extends State<PayslipScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchAllPayslips();
+    fetchAllPayslips();
   }
 
-  Future<void> _fetchAllPayslips() async {
+  Future<void> fetchAllPayslips() async {
+    setState(() => _isLoading = true);
     try {
       final response = await http.post(
         Uri.parse('http://127.0.0.1:5000/api/payslips-all'),
@@ -808,7 +842,7 @@ class _PayslipScreenState extends State<PayslipScreen> {
               const Align(alignment: Alignment.centerLeft, child: Text('EARNINGS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey))),
               const SizedBox(height: 8),
               _buildRow('Basic Salary', 'RM ${slip['basic_salary'].toStringAsFixed(2)}'),
-              _buildRow('Overtime (OT)', 'RM ${slip['ot_pay'].toStringAsFixed(2)}'),
+              _buildRow('Overtime (OT & Shift Calc)', 'RM ${slip['ot_pay'].toStringAsFixed(2)}'),
               _buildRow('Table Commission (Haidilao)', 'RM ${slip['commission'].toStringAsFixed(2)}'),
               _buildRow('Full Attendance Bonus', 'RM ${slip['attendance_bonus'].toStringAsFixed(2)}'),
               _buildRow('Gross Earnings', 'RM $grossPay', isBold: true),
@@ -873,6 +907,9 @@ class _PayslipScreenState extends State<PayslipScreen> {
         ),
         backgroundColor: const Color(0xFFD32F2F),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), tooltip: 'Refresh Payslips', onPressed: fetchAllPayslips),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -919,7 +956,7 @@ class _PayslipScreenState extends State<PayslipScreen> {
                           child: Text(slip['month_num'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                         title: Text('${slip['month']} $_selectedYear', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                        subtitle: Text('Credited on ${slip['pay_date']}'),
+                        subtitle: Text('Credited on ${slip['pay_date']} (${slip['status']})'),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -933,6 +970,216 @@ class _PayslipScreenState extends State<PayslipScreen> {
                     );
                   },
                 ),
+    );
+  }
+}
+
+// ==========================================
+// 页面 5 (Week 4 新增)：员工档案、排班表与主管审批后台
+// ==========================================
+class ProfileAdminScreen extends StatefulWidget {
+  final VoidCallback onStatusChanged;
+  const ProfileAdminScreen({super.key, required this.onStatusChanged});
+
+  @override
+  State<ProfileAdminScreen> createState() => _ProfileAdminScreenState();
+}
+
+class _ProfileAdminScreenState extends State<ProfileAdminScreen> {
+  bool _isManagerMode = false;
+  List<dynamic> _allLeaves = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPendingLeaves();
+  }
+
+  Future<void> fetchPendingLeaves() async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:5000/api/leave-list'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'staff_id': 1}),
+      );
+      if (response.statusCode == 200) {
+        setState(() => _allLeaves = jsonDecode(response.body)['data']);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _updateLeaveStatus(int leaveId, String newStatus) async {
+    final response = await http.post(
+      Uri.parse('http://127.0.0.1:5000/api/leave-approve'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'leave_id': leaveId, 'status': newStatus}),
+    );
+    if (response.statusCode == 200) {
+      fetchPendingLeaves();
+      widget.onStatusChanged();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Leave #$leaveId marked as $newStatus!'),
+            backgroundColor: newStatus == 'Approved' ? Colors.green : Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Staff Profile & Portal', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFFD32F2F),
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 电子工牌卡片
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+              ),
+              child: const Column(
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Color(0xFFD32F2F),
+                      child: Icon(Icons.person, color: Colors.white, size: 30),
+                    ),
+                    title: Text('Ng Zhe Wei', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+                    subtitle: Text('Management Trainee & Service Staff • Sutera Branch'),
+                  ),
+                  Divider(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Payroll Bank:', style: TextStyle(color: Colors.grey)),
+                      Text('Public Bank Berhad (**** 8821)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('EPF / KWSP No:', style: TextStyle(color: Colors.grey)),
+                      Text('KWSP-99482104', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('SOCSO / PERKESO:', style: TextStyle(color: Colors.grey)),
+                      Text('active • Category 1', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // 本周排班表
+            const Text('Weekly Shift Roster', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+              ),
+              child: const Column(
+                children: [
+                  ListTile(
+                    dense: true,
+                    leading: Icon(Icons.wb_sunny_outlined, color: Colors.orange),
+                    title: Text('Mon - Wed (Morning Shift)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    trailing: Text('10:00 AM - 07:00 PM'),
+                  ),
+                  Divider(),
+                  ListTile(
+                    dense: true,
+                    leading: Icon(Icons.nights_stay_outlined, color: Colors.indigo),
+                    title: Text('Thu - Sat (Night / Closing Shift)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    trailing: Text('06:00 PM - 03:00 AM'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // 主管审批开关面板
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              decoration: BoxDecoration(
+                color: _isManagerMode ? const Color(0xFFFFEBEE) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _isManagerMode ? const Color(0xFFD32F2F) : Colors.transparent),
+              ),
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Manager Approval Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Toggle to approve or reject staff leave requests'),
+                value: _isManagerMode,
+                activeThumbColor: const Color(0xFFD32F2F),
+                onChanged: (val) {
+                  setState(() => _isManagerMode = val);
+                  if (val) fetchPendingLeaves();
+                },
+              ),
+            ),
+            if (_isManagerMode) ...[
+              const SizedBox(height: 16),
+              const Text('Leave Approval Queue (HR Admin)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              _allLeaves.isEmpty
+                  ? const Text('No leave applications to review.', style: TextStyle(color: Colors.grey))
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _allLeaves.length,
+                      itemBuilder: (context, index) {
+                        final item = _allLeaves[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: ListTile(
+                            title: Text('${item['type']} (#${item['id']})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('${item['start']} ➔ ${item['end']}\nStatus: ${item['status']}'),
+                            isThreeLine: true,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.check_circle, color: Colors.green, size: 30),
+                                  tooltip: 'Approve',
+                                  onPressed: () => _updateLeaveStatus(item['id'], 'Approved'),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.cancel, color: Colors.redAccent, size: 30),
+                                  tooltip: 'Reject',
+                                  onPressed: () => _updateLeaveStatus(item['id'], 'Rejected'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
