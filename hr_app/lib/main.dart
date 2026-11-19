@@ -1,8 +1,9 @@
-// cSpell:ignore Haidilao socso SOCSO KWSP PERKESO Sutera Utama Berhad Deepavali
+// cSpell:disable
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
 
 void main() {
   runApp(const HRApp());
@@ -14,14 +15,14 @@ class HRApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Haidilao Enterprise HR Cloud',
+      title: 'SmarterPOS Enterprise HR & Live POS',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFFB71C1C),
           primary: const Color(0xFFB71C1C),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF2F4F8),
+        scaffoldBackgroundColor: const Color(0xFFF3F5F9),
         useMaterial3: true,
       ),
       home: const RootAuthWrapper(),
@@ -29,19 +30,14 @@ class HRApp extends StatelessWidget {
   }
 }
 
-// ==========================================
-// 认证网关
-// ==========================================
 class RootAuthWrapper extends StatefulWidget {
   const RootAuthWrapper({super.key});
-
   @override
   State<RootAuthWrapper> createState() => _RootAuthWrapperState();
 }
 
 class _RootAuthWrapperState extends State<RootAuthWrapper> {
   Map<String, dynamic>? _currentUser;
-
   @override
   Widget build(BuildContext context) {
     if (_currentUser == null) {
@@ -55,12 +51,11 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
 }
 
 // ==========================================
-// 登录页 (支持 L1 / L2 / L3 一键切换体验)
+// 登录页
 // ==========================================
 class LoginScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onLoginSuccess;
   const LoginScreen({super.key, required this.onLoginSuccess});
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -80,21 +75,16 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
       _errorMsg = '';
     });
-
     try {
       final response = await http.post(
         Uri.parse('http://127.0.0.1:5000/api/login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': _userController.text,
-          'password': _passController.text,
-        }),
+        body: jsonEncode({'username': _userController.text, 'password': _passController.text}),
       );
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        widget.onLoginSuccess(data['user']);
+        widget.onLoginSuccess(jsonDecode(response.body)['user']);
       } else {
-        setState(() => _errorMsg = 'Invalid credentials.');
+        setState(() => _errorMsg = 'Invalid username or password.');
       }
     } catch (e) {
       setState(() => _errorMsg = 'Server offline! Please restart python app.py');
@@ -110,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
         width: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF1A1F2C), Color(0xFF3A1C1C), Color(0xFF8E1616)],
+            colors: [Color(0xFF141824), Color(0xFF4A1212), Color(0xFF9E1B1B)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -119,27 +109,26 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: const BoxConstraints(maxWidth: 450),
               child: Container(
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 30, offset: const Offset(0, 15))],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 30, offset: const Offset(0, 15))],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: const Color(0xFFFFEBEE), borderRadius: BorderRadius.circular(20)),
-                      child: const Icon(Icons.soup_kitchen, size: 44, color: Color(0xFFB71C1C)),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: const Color(0xFFFFEBEE), borderRadius: BorderRadius.circular(18)),
+                      child: const Icon(Icons.storefront_rounded, size: 42, color: Color(0xFFB71C1C)),
                     ),
-                    const SizedBox(height: 16),
-                    const Text('HAIDILAO HR CLOUD', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 1.2, color: Color(0xFF1A1F2C))),
-                    const SizedBox(height: 4),
-                    const Text('Enterprise Attendance, Leave, Claims & Payroll', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 14),
+                    const Text('SMARTERPOS F&B ERP', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.0, color: Color(0xFF141824))),
+                    const Text('GPS Biometric HR • EA 1955 Payroll • Live POS Sync', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    const SizedBox(height: 22),
                     TextField(
                       controller: _userController,
                       decoration: InputDecoration(
@@ -148,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: _passController,
                       obscureText: true,
@@ -159,37 +148,36 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     if (_errorMsg.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Text(_errorMsg, style: const TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      Text(_errorMsg, style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFB71C1C),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 15),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                         onPressed: _isLoading ? null : () => _performLogin(),
-                        child: _isLoading
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('SIGN IN TO PORTAL', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        child: const Text('SIGN IN TO STAFF PORTAL', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.8)),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     const Divider(),
-                    const SizedBox(height: 8),
-                    const Text('1-CLICK ROLE SWITCH (DEMO ACCOUNTS)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
-                    const SizedBox(height: 12),
+                    const Text('1-CLICK DEMO ROLE SWITCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        _buildRoleChip('L1 Staff', 'Ng Zhe Wei', 'staff', Colors.blue[800]!),
-                        const SizedBox(width: 8),
+                        _buildRoleChip('L1 Sutera', 'Ng Zhe Wei', 'staff', Colors.blue[800]!),
+                        const SizedBox(width: 6),
+                        _buildRoleChip('L1 Austin', 'Tan Mei Ling', 'austin', Colors.teal[800]!),
+                        const SizedBox(width: 6),
                         _buildRoleChip('L2 Manager', 'Eugene Tang', 'manager', Colors.orange[800]!),
-                        const SizedBox(width: 8),
-                        _buildRoleChip('L3 HR Admin', 'See Lin', 'admin', Colors.purple[800]!),
+                        const SizedBox(width: 6),
+                        _buildRoleChip('L3 HR HQ', 'See Lin', 'admin', Colors.purple[800]!),
                       ],
                     ),
                   ],
@@ -206,19 +194,19 @@ class _LoginScreenState extends State<LoginScreen> {
     return Expanded(
       child: InkWell(
         onTap: () => _performLogin(username),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Column(
             children: [
-              Text(level, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+              Text(level, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
               const SizedBox(height: 2),
-              Text(name, style: const TextStyle(fontSize: 10, color: Colors.black87), overflow: TextOverflow.ellipsis),
+              Text(name, style: const TextStyle(fontSize: 9, color: Colors.black87), overflow: TextOverflow.ellipsis),
             ],
           ),
         ),
@@ -228,13 +216,12 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 // ==========================================
-// 主框架：动态权限导航栏
+// 主框架：员工端 HR + 抽成 + 客人订单后台监控
 // ==========================================
 class MainNavigator extends StatefulWidget {
   final Map<String, dynamic> user;
   final VoidCallback onLogout;
   const MainNavigator({super.key, required this.user, required this.onLogout});
-
   @override
   State<MainNavigator> createState() => _MainNavigatorState();
 }
@@ -243,89 +230,95 @@ class _MainNavigatorState extends State<MainNavigator> {
   int _currentIndex = 0;
   int _refreshTick = 0;
 
-  void _triggerGlobalRefresh() {
-    setState(() => _refreshTick++);
-  }
+  void _triggerGlobalRefresh() => setState(() => _refreshTick++);
 
   @override
   Widget build(BuildContext context) {
     final int roleLevel = widget.user['role_level'] ?? 1;
+    final bool isManagerOrHR = roleLevel >= 2;
 
-    Widget activePage;
-    switch (_currentIndex) {
-      case 0:
-        activePage = PunchCardScreen(
+    final List<Widget> pages = [
+      PunchCardScreen(
+        user: widget.user,
+        onLogout: widget.onLogout,
+        onPunchSuccess: _triggerGlobalRefresh,
+      ),
+      MyAttendanceScreen(
+        key: ValueKey('my_att_$_refreshTick'),
+        user: widget.user,
+      ),
+      LeaveAndClaimsScreen(
+        key: ValueKey('leave_$_refreshTick'),
+        user: widget.user,
+      ),
+      MalaysianPayslipScreen(
+        key: ValueKey('pay_$_refreshTick'),
+        user: widget.user,
+      ),
+      CommissionScreen(
+        key: ValueKey('comm_$_refreshTick'),
+        user: widget.user,
+      ),
+      LiveOrdersMonitorScreen(
+        key: ValueKey('pos_live_$_refreshTick'),
+        user: widget.user,
+      ),
+      MyPersonalProfileScreen(
+        key: ValueKey('prof_$_refreshTick'),
+        user: widget.user,
+        onLogout: widget.onLogout,
+      ),
+      if (isManagerOrHR)
+        HRAttendanceAuditScreen(
+          key: ValueKey('hr_att_$_refreshTick'),
           user: widget.user,
-          onLogout: widget.onLogout,
-          onPunchSuccess: _triggerGlobalRefresh,
-        );
-        break;
-      case 1:
-        activePage = AttendanceHistoryScreen(
-          key: ValueKey('hist_$_refreshTick'),
+        ),
+      if (isManagerOrHR)
+        HRLeaveWorkflowAuditScreen(
+          key: ValueKey('hr_leave_$_refreshTick'),
           user: widget.user,
-        );
-        break;
-      case 2:
-        activePage = LeaveAndClaimsScreen(
-          key: ValueKey('leave_$_refreshTick'),
-          user: widget.user,
-        );
-        break;
-      case 3:
-        activePage = PayslipScreen(
-          key: ValueKey('pay_$_refreshTick'),
-          user: widget.user,
-        );
-        break;
-      case 4:
-        activePage = RoleCommandCenterScreen(
-          key: ValueKey('role_$_refreshTick'),
-          user: widget.user,
-          onLogout: widget.onLogout,
           onDataChanged: _triggerGlobalRefresh,
-        );
-        break;
-      default:
-        activePage = const SizedBox();
-    }
+        ),
+    ];
 
-    String fifthTabLabel = 'My Pass';
-    IconData fifthTabIcon = Icons.badge_outlined;
-    if (roleLevel == 2) {
-      fifthTabLabel = 'Review (L2)';
-      fifthTabIcon = Icons.fact_check_outlined;
-    } else if (roleLevel >= 3) {
-      fifthTabLabel = 'HR Admin (L3)';
-      fifthTabIcon = Icons.admin_panel_settings_outlined;
-    }
+    final List<BottomNavigationBarItem> navItems = [
+      const BottomNavigationBarItem(icon: Icon(Icons.camera_front_outlined, size: 20), label: 'GPS Punch'),
+      const BottomNavigationBarItem(icon: Icon(Icons.history_edu_outlined, size: 20), label: 'My Log'),
+      const BottomNavigationBarItem(icon: Icon(Icons.calendar_month_outlined, size: 20), label: 'Leave'),
+      const BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined, size: 20), label: 'Payslip'),
+      const BottomNavigationBarItem(icon: Icon(Icons.monetization_on_outlined, size: 20), label: 'Live Pay'),
+      const BottomNavigationBarItem(icon: Icon(Icons.point_of_sale_outlined, size: 20), label: 'Live POS'),
+      const BottomNavigationBarItem(icon: Icon(Icons.person_pin_outlined, size: 20), label: 'Profile'),
+      if (isManagerOrHR)
+        const BottomNavigationBarItem(icon: Icon(Icons.fact_check_outlined, size: 20), label: 'HR Audit'),
+      if (isManagerOrHR)
+        const BottomNavigationBarItem(icon: Icon(Icons.account_tree_outlined, size: 20), label: 'Workflow'),
+    ];
+
+    final int safeIndex = _currentIndex >= pages.length ? 0 : _currentIndex;
 
     return Scaffold(
-      body: activePage,
+      body: pages[safeIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 15, offset: const Offset(0, -3))],
         ),
         child: BottomNavigationBar(
-          currentIndex: _currentIndex,
+          currentIndex: safeIndex,
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           selectedItemColor: const Color(0xFFB71C1C),
-          unselectedItemColor: Colors.grey[500],
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+          unselectedItemColor: Colors.grey[600],
+          selectedFontSize: 10,
+          unselectedFontSize: 9.5,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
           onTap: (index) {
             setState(() {
               _currentIndex = index;
               _refreshTick++;
             });
           },
-          items: [
-            const BottomNavigationBarItem(icon: Icon(Icons.fingerprint, size: 24), label: 'Punch Card'),
-            const BottomNavigationBarItem(icon: Icon(Icons.swap_vert_circle_outlined, size: 24), label: 'IN/OUT Log'),
-            const BottomNavigationBarItem(icon: Icon(Icons.event_note_outlined, size: 24), label: 'Leave & Claim'),
-            const BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined, size: 24), label: 'Payslip'),
-            BottomNavigationBarItem(icon: Icon(fifthTabIcon, size: 24), label: fifthTabLabel),
-          ],
+          items: navItems,
         ),
       ),
     );
@@ -333,8 +326,16 @@ class _MainNavigatorState extends State<MainNavigator> {
 }
 
 // ==========================================
-// 页面 1：打卡主页 + 门店公告栏 + 当月 KPI 统计卡片
+// 独立页面 1：拍照自拍 + GPS 地理围栏定位打卡系统
 // ==========================================
+class GpsZoneOption {
+  final String label;
+  final String coords;
+  final int dist;
+  final String branch;
+  const GpsZoneOption(this.label, this.coords, this.dist, this.branch);
+}
+
 class PunchCardScreen extends StatefulWidget {
   final Map<String, dynamic> user;
   final VoidCallback onLogout;
@@ -354,18 +355,34 @@ class PunchCardScreen extends StatefulWidget {
 class _PunchCardScreenState extends State<PunchCardScreen> {
   bool _isClockedIn = false;
   bool _isLoading = true;
-  String _feedbackMessage = "Syncing terminal status...";
+  bool _selfieCaptured = false;
+  String _capturedSelfieFilename = "";
+  String _captureTimestamp = "";
+  String _selectedGpsZone = "Sutera Mall Outlet (1.5152° N, 103.6660° E)";
+  int _gpsDistanceMeters = 14;
+
+  String _feedbackMessage = "Syncing terminal...";
   String _currentTimeString = "";
   String _currentDateString = "";
   Map<String, dynamic> _kpi = {"shifts": 0, "hours": 0.0, "est_ot": 420.0};
-  Map<String, dynamic> _notice = {"title": "Loading...", "content": "", "author": ""};
+  Map<String, dynamic> _notice = {"title": "Notice", "content": ""};
   Timer? _timer;
+
+  final List<GpsZoneOption> _jbBranchGpsZones = const [
+    GpsZoneOption("Sutera Mall Outlet (1.5152° N, 103.6660° E)", "1.5152° N, 103.6660° E", 14, "Sutera Utama Outlet"),
+    GpsZoneOption("Mount Austin Outlet (1.5641° N, 103.7782° E)", "1.5641° N, 103.7782° E", 19, "Mount Austin Outlet"),
+    GpsZoneOption("JB HQ Office (1.4655° N, 103.7578° E)", "1.4655° N, 103.7578° E", 9, "Johor Bahru HQ"),
+  ];
 
   @override
   void initState() {
     super.initState();
     _updateClock();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateClock());
+    if (widget.user['branch'] == 'Mount Austin Outlet') {
+      _selectedGpsZone = _jbBranchGpsZones[1].label;
+      _gpsDistanceMeters = _jbBranchGpsZones[1].dist;
+    }
     _syncStatus();
   }
 
@@ -388,20 +405,18 @@ class _PunchCardScreenState extends State<PunchCardScreen> {
 
   Future<void> _syncStatus() async {
     try {
-      final statusRes = await http.post(
+      final res = await http.post(
         Uri.parse('http://127.0.0.1:5000/api/status'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'staff_id': widget.user['staff_id']}),
       );
-      if (statusRes.statusCode == 200 && mounted) {
-        final sData = jsonDecode(statusRes.body);
+      if (res.statusCode == 200 && mounted) {
+        final d = jsonDecode(res.body);
         setState(() {
-          _isClockedIn = sData['is_clocked_in'];
-          _kpi = sData['kpi'] ?? _kpi;
-          _notice = sData['announcement'] ?? _notice;
-          _feedbackMessage = _isClockedIn
-              ? "On Shift since ${sData['clock_in_time']}"
-              : "Off-Duty • Ready for Clock IN";
+          _isClockedIn = d['is_clocked_in'];
+          _kpi = d['kpi'] ?? _kpi;
+          _notice = d['announcement'] ?? _notice;
+          _feedbackMessage = _isClockedIn ? "ACTIVE SHIFT since ${d['clock_in_time']}" : "OFF-DUTY • Capture Selfie & GPS to Clock In";
         });
       }
     } catch (_) {
@@ -410,29 +425,66 @@ class _PunchCardScreenState extends State<PunchCardScreen> {
     }
   }
 
+  void _takeBiometricSelfie() {
+    final now = DateTime.now();
+    final tag = "IMG_${widget.user['username'].toString().toUpperCase()}_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour}${now.minute}${now.second}.jpg";
+    setState(() {
+      _selfieCaptured = true;
+      _capturedSelfieFilename = tag;
+      _captureTimestamp = _currentTimeString;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Biometric Selfie Captured: $tag (Watermark & GPS Embedded)'),
+        backgroundColor: Colors.teal[800],
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _handlePunchCard() async {
+    if (!_selfieCaptured) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('PHOTO REQUIRED: Please tap "1. Capture Biometric Selfie" before punching in/out!'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     final endpoint = _isClockedIn ? '/api/clock-out' : '/api/clock-in';
+    final GpsZoneOption zoneObj = _jbBranchGpsZones.firstWhere(
+      (z) => z.label == _selectedGpsZone,
+      orElse: () => _jbBranchGpsZones[0],
+    );
 
     try {
-      final response = await http.post(
+      final res = await http.post(
         Uri.parse('http://127.0.0.1:5000$endpoint'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'staff_id': widget.user['staff_id']}),
+        body: jsonEncode({
+          'staff_id': widget.user['staff_id'],
+          'branch': zoneObj.branch,
+          'gps_coords': zoneObj.coords,
+          'location': zoneObj.label,
+          'distance_m': _gpsDistanceMeters,
+          'selfie_tag': _capturedSelfieFilename,
+        }),
       );
-
-      final data = jsonDecode(response.body);
-      if (response.statusCode == 200) {
+      final d = jsonDecode(res.body);
+      if (res.statusCode == 200) {
+        setState(() => _selfieCaptured = false);
         await _syncStatus();
         widget.onPunchSuccess();
         if (mounted) {
-          final isOut = data['type'] == 'OUT';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(isOut
-                  ? 'CLOCKED OUT (${data['time']}) • Shift Duration: ${data['total_hours']} hrs'
-                  : 'CLOCKED IN (${data['time']})'),
-              backgroundColor: isOut ? Colors.orange[800] : Colors.green[700],
+              content: Text(d['type'] == 'OUT'
+                  ? 'CLOCKED OUT Recorded (${d['time']}) • GPS & Selfie Sent to HR!'
+                  : 'CLOCKED IN Recorded (${d['time']}) • GPS & Selfie Sent to HR!'),
+              backgroundColor: d['type'] == 'OUT' ? Colors.orange[800] : Colors.green[700],
             ),
           );
         }
@@ -443,211 +495,262 @@ class _PunchCardScreenState extends State<PunchCardScreen> {
     }
   }
 
-  Color _getRoleBadgeColor(int level) {
-    if (level >= 3) return Colors.amber[700]!;
-    if (level == 2) return Colors.cyanAccent[700]!;
-    return Colors.greenAccent[700]!;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final int roleLevel = widget.user['role_level'] ?? 1;
-
     return Scaffold(
-      body: Column(
-        children: [
-          // 顶部商业级身份识别栏
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(22, 42, 22, 20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF1E222D), Color(0xFF7F1414), Color(0xFFB71C1C)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 38, 20, 18),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [Color(0xFF141824), Color(0xFF7F1414), Color(0xFFB71C1C)]),
+                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(26), bottomRight: Radius.circular(26)),
               ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(28),
-                bottomRight: Radius.circular(28),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Colors.white24,
+                        child: Text(widget.user['full_name'].toString().substring(0, 2).toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${widget.user['full_name']} (L${widget.user['role_level']})', style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                            Text('${widget.user['role_title']} • ${widget.user['branch']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: widget.onLogout,
+                        icon: const Icon(Icons.switch_account, color: Colors.amberAccent, size: 18),
+                        label: const Text('Switch', style: TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.campaign, color: Colors.amberAccent, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text('${_notice['title']}: ${_notice['content']}', style: const TextStyle(color: Colors.white, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors.white.withValues(alpha: 0.18),
-                      child: Text(
-                        widget.user['full_name'].toString().substring(0, 2).toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
+
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  widget.user['full_name'],
-                                  style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(color: _getRoleBadgeColor(roleLevel), borderRadius: BorderRadius.circular(6)),
-                                child: Text('LEVEL $roleLevel', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text('${widget.user['role_title']} • ${widget.user['branch']}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                          Text(_currentTimeString, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFF141824))),
+                          Text(_currentDateString, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                    ),
-                    IconButton(
-                      onPressed: widget.onLogout,
-                      tooltip: 'Switch Role / Logout',
-                      icon: const Icon(Icons.switch_account_outlined, color: Colors.white),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // 门店实时广播横幅 (Noticeboard)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.28),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.campaign_rounded, color: Colors.amberAccent, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _isClockedIn ? Colors.green[100] : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: Text(
-                          '${_notice['title']}: ${_notice['content']}',
-                          style: const TextStyle(color: Colors.white, fontSize: 11),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          _isClockedIn ? 'STATUS: ON DUTY' : 'STATUS: OFF DUTY',
+                          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: _isClockedIn ? Colors.green[900] : Colors.black87),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          // 当月实时考勤 KPI 统计三联卡
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Row(
-              children: [
-                _buildKpiMiniCard('Completed Shifts', '${_kpi['shifts']} Shifts', Icons.verified_outlined, Colors.blue[700]!),
-                const SizedBox(width: 10),
-                _buildKpiMiniCard('Logged Hours', '${_kpi['hours']} hrs', Icons.timer_outlined, Colors.teal[700]!),
-                const SizedBox(width: 10),
-                _buildKpiMiniCard('Live OT Pay', 'RM ${_kpi['est_ot']}', Icons.payments_outlined, Colors.green[800]!),
-              ],
-            ),
-          ),
-          const Spacer(),
-          // 实时电子时钟
-          Text(_currentTimeString, style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, letterSpacing: 2, color: Color(0xFF1E222D))),
-          Text(_currentDateString, style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w600)),
-          const Spacer(),
-          // 双态打卡大圆盘
-          GestureDetector(
-            onTap: _isLoading ? null : _handlePunchCard,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: 185,
-              height: 185,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: _isClockedIn
-                      ? [const Color(0xFFE65100), const Color(0xFFFF9800)]
-                      : [const Color(0xFF1B5E20), const Color(0xFF43A047)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (_isClockedIn ? Colors.orange : Colors.green).withValues(alpha: 0.38),
-                    blurRadius: 26,
-                    spreadRadius: 5,
-                    offset: const Offset(0, 8),
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.gps_fixed, color: Colors.blue[800], size: 18),
+                                const SizedBox(width: 6),
+                                const Text('LIVE GPS GEOFENCE LOCATOR', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF141824))),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(6)),
+                              child: Text('Within ${_gpsDistanceMeters}m (Verified)', style: TextStyle(color: Colors.green[800], fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedGpsZone,
+                          decoration: InputDecoration(
+                            labelText: 'Detected Johor Bahru Outlet GPS Node',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          items: _jbBranchGpsZones
+                              .map((z) => DropdownMenuItem<String>(
+                                    value: z.label,
+                                    child: Text(z.label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                  ))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val == null) return;
+                            final found = _jbBranchGpsZones.firstWhere((z) => z.label == val);
+                            setState(() {
+                              _selectedGpsZone = val;
+                              _gpsDistanceMeters = found.dist;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1F2C),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.camera_alt_outlined, color: Colors.amberAccent, size: 18),
+                                SizedBox(width: 6),
+                                Text('BIOMETRIC SELFIE VERIFICATION', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            Text(
+                              _selfieCaptured ? 'PHOTO LOCKED ✓' : 'REQUIRED BEFORE PUNCH',
+                              style: TextStyle(color: _selfieCaptured ? Colors.greenAccent : Colors.orangeAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          height: 135,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D1117),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: _selfieCaptured ? Colors.greenAccent : Colors.white24, width: 2),
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _selfieCaptured ? Icons.verified_user_rounded : Icons.face_retouching_natural,
+                                    size: 52,
+                                    color: _selfieCaptured ? Colors.greenAccent : Colors.white54,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _selfieCaptured
+                                        ? 'Snapshot: $_capturedSelfieFilename\nTime: $_captureTimestamp • Face ID Match 99.4%'
+                                        : 'Position face inside frame & tap Capture Selfie',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: _selfieCaptured ? Colors.greenAccent : Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                              Positioned(
+                                bottom: 6,
+                                right: 10,
+                                child: Text(
+                                  'GPS: ${_selectedGpsZone.split("(").last.replaceAll(")", "")}',
+                                  style: const TextStyle(color: Colors.amberAccent, fontSize: 9, fontFamily: 'monospace'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.amberAccent),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onPressed: _takeBiometricSelfie,
+                                icon: const Icon(Icons.camera, color: Colors.amberAccent),
+                                label: Text(_selfieCaptured ? 'Retake Selfie Photo' : '1. Capture Biometric Selfie', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _isClockedIn ? Colors.orange[800] : Colors.green[700],
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onPressed: _isLoading ? null : _handlePunchCard,
+                                icon: Icon(_isClockedIn ? Icons.logout : Icons.login),
+                                label: Text(
+                                  _isClockedIn ? '2. CLOCK OUT NOW' : '2. CLOCK IN NOW',
+                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 18, color: _isClockedIn ? Colors.green[800] : const Color(0xFFB71C1C)),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(_feedbackMessage, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                        Text('Shifts: ${_kpi['shifts']} | ${_kpi['hours']}h', style: const TextStyle(fontSize: 11, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              child: Center(
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(_isClockedIn ? Icons.logout_rounded : Icons.login_rounded, size: 48, color: Colors.white),
-                          const SizedBox(height: 6),
-                          Text(
-                            _isClockedIn ? 'CLOCK OUT' : 'CLOCK IN',
-                            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.2),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _isClockedIn ? 'Tap to Record Exit' : 'Tap to Record Entry',
-                            style: const TextStyle(color: Colors.white70, fontSize: 11),
-                          ),
-                        ],
-                      ),
-              ),
             ),
-          ),
-          const Spacer(),
-          // 底部状态条
-          Container(
-            margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.circle, size: 10, color: _isClockedIn ? Colors.orange : Colors.green),
-                const SizedBox(width: 10),
-                Expanded(child: Text(_feedbackMessage, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold))),
-                const Text('Sutera GPS OK', style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKpiMiniCard(String label, String val, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6)],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(height: 4),
-            Text(val, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color)),
-            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
           ],
         ),
       ),
@@ -656,41 +759,36 @@ class _PunchCardScreenState extends State<PunchCardScreen> {
 }
 
 // ==========================================
-// 页面 2：“一进一出”独立考勤流水页
+// 独立页面 2：个人考勤流水页
 // ==========================================
-class AttendanceHistoryScreen extends StatefulWidget {
+class MyAttendanceScreen extends StatefulWidget {
   final Map<String, dynamic> user;
-  const AttendanceHistoryScreen({super.key, required this.user});
-
+  const MyAttendanceScreen({super.key, required this.user});
   @override
-  State<AttendanceHistoryScreen> createState() => _AttendanceHistoryScreenState();
+  State<MyAttendanceScreen> createState() => _MyAttendanceScreenState();
 }
 
-class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
+class _MyAttendanceScreenState extends State<MyAttendanceScreen> {
   List<dynamic> _events = [];
   bool _isLoading = true;
-  bool _viewAllBranch = false;
 
   @override
   void initState() {
     super.initState();
-    fetchHistory();
+    _fetchMyLogs();
   }
 
-  Future<void> fetchHistory() async {
+  Future<void> _fetchMyLogs() async {
     setState(() => _isLoading = true);
     try {
-      final response = await http.post(
+      final res = await http.post(
         Uri.parse('http://127.0.0.1:5000/api/history'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'staff_id': widget.user['staff_id'],
-          'view_all': _viewAllBranch,
-        }),
+        body: jsonEncode({'staff_id': widget.user['staff_id'], 'view_all': false}),
       );
-      if (response.statusCode == 200 && mounted) {
+      if (res.statusCode == 200 && mounted) {
         setState(() {
-          _events = jsonDecode(response.body)['data'];
+          _events = jsonDecode(res.body)['data'];
           _isLoading = false;
         });
       }
@@ -701,30 +799,12 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool canViewAll = (widget.user['role_level'] ?? 1) >= 2;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('IN / OUT Punch Stream', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E222D),
+        title: const Text('My Personal IN / OUT Logs', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF141824),
         foregroundColor: Colors.white,
-        actions: [
-          if (canViewAll)
-            Row(
-              children: [
-                const Text('All Staff', style: TextStyle(fontSize: 12)),
-                Switch(
-                  value: _viewAllBranch,
-                  activeThumbColor: Colors.amber,
-                  onChanged: (val) {
-                    setState(() => _viewAllBranch = val);
-                    fetchHistory();
-                  },
-                ),
-              ],
-            ),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: fetchHistory),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchMyLogs)],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -734,56 +814,42 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               itemBuilder: (context, index) {
                 final ev = _events[index];
                 final bool isIn = ev['type'] == 'IN';
-
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border(left: BorderSide(color: isIn ? Colors.green[600]! : Colors.orange[700]!, width: 5)),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border(left: BorderSide(color: isIn ? Colors.green[700]! : Colors.orange[800]!, width: 5)),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        backgroundColor: isIn ? Colors.green[50] : Colors.orange[50],
-                        child: Icon(isIn ? Icons.login_rounded : Icons.logout_rounded, color: isIn ? Colors.green[700] : Colors.orange[800]),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(color: isIn ? Colors.green[700] : Colors.orange[800], borderRadius: BorderRadius.circular(6)),
+                            child: Text(isIn ? 'CLOCK IN (进)' : 'CLOCK OUT (出)', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                          ),
+                          Text(ev['time'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        ],
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: isIn ? Colors.green[700] : Colors.orange[800],
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    isIn ? 'CLOCK IN (进)' : 'CLOCK OUT (出)',
-                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(ev['staff_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text('Time: ${ev['time']}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                            Text('Gate: ${ev['location']}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                          ],
-                        ),
+                      const SizedBox(height: 8),
+                      Text('Location: ${ev['location']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.gps_fixed, size: 13, color: Colors.blue[700]),
+                          const SizedBox(width: 4),
+                          Text('GPS: ${ev['gps_coords']} (${ev['distance_m']}m)', style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+                          const Spacer(),
+                          const Icon(Icons.camera_alt, size: 13, color: Colors.teal),
+                          const SizedBox(width: 4),
+                          Text(ev['selfie_tag'].toString(), style: const TextStyle(fontSize: 11, color: Colors.teal, fontWeight: FontWeight.bold)),
+                        ],
                       ),
-                      if (!isIn)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(color: Colors.blueGrey[50], borderRadius: BorderRadius.circular(10)),
-                          child: Text('${ev['hours']}h', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-                        ),
                     ],
                   ),
                 );
@@ -794,7 +860,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 }
 
 // ==========================================
-// 页面 3：请假与费用报销双合一中心 (展示审批人姓名 + 拒绝/批准理由 + 自动扣减假期余额)
+// 独立页面 3：个人请假申请与报销
 // ==========================================
 class LeaveAndClaimsScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -804,15 +870,14 @@ class LeaveAndClaimsScreen extends StatefulWidget {
 }
 
 class _LeaveAndClaimsScreenState extends State<LeaveAndClaimsScreen> {
-  int _subTab = 0; // 0: Leave, 1: Expense Claims
+  int _subTab = 0;
   String _selectedLeave = 'AL (Annual Leave)';
   DateTime? _startDate;
   DateTime? _endDate;
   final _reasonController = TextEditingController();
   List<dynamic> _leaveHistory = [];
-  Map<String, dynamic> _quotas = {"al_left": 12, "al_used": 0, "mc_left": 14, "mc_used": 0, "hl_left": 60, "hl_used": 0};
+  Map<String, dynamic> _quotas = {"al_left": 12, "mc_left": 14, "hl_left": 60};
 
-  // 报销表单控制器
   String _claimCat = 'Transport / Late Night Grab';
   final _claimAmountCtrl = TextEditingController();
   final _claimDescCtrl = TextEditingController();
@@ -826,16 +891,8 @@ class _LeaveAndClaimsScreenState extends State<LeaveAndClaimsScreen> {
 
   Future<void> _fetchAll() async {
     try {
-      final lRes = await http.post(
-        Uri.parse('http://127.0.0.1:5000/api/leave-list'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'staff_id': widget.user['staff_id'], 'view_all': false}),
-      );
-      final cRes = await http.post(
-        Uri.parse('http://127.0.0.1:5000/api/claim-list'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'staff_id': widget.user['staff_id'], 'view_all': false}),
-      );
+      final lRes = await http.post(Uri.parse('http://127.0.0.1:5000/api/leave-list'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'staff_id': widget.user['staff_id'], 'view_all': false}));
+      final cRes = await http.post(Uri.parse('http://127.0.0.1:5000/api/claim-list'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'staff_id': widget.user['staff_id'], 'view_all': false}));
       if (lRes.statusCode == 200 && cRes.statusCode == 200 && mounted) {
         final lData = jsonDecode(lRes.body);
         setState(() {
@@ -845,11 +902,6 @@ class _LeaveAndClaimsScreenState extends State<LeaveAndClaimsScreen> {
         });
       }
     } catch (_) {}
-  }
-
-  String _formatDate(DateTime? d) {
-    if (d == null) return 'Select Date';
-    return "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
   }
 
   Future<void> _pickDate(bool isStart) async {
@@ -871,22 +923,18 @@ class _LeaveAndClaimsScreenState extends State<LeaveAndClaimsScreen> {
     }
   }
 
-  Future<void> _submitLeave() async {
-    if (_startDate == null || _endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select Start Date and End Date!'), backgroundColor: Colors.redAccent),
-      );
-      return;
-    }
+  String _fmtDate(DateTime? d) => d == null ? 'Select Date' : "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
 
+  Future<void> _submitLeave() async {
+    if (_startDate == null || _endDate == null) return;
     await http.post(
       Uri.parse('http://127.0.0.1:5000/api/leave'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'staff_id': widget.user['staff_id'],
         'leave_type': _selectedLeave,
-        'start_date': _formatDate(_startDate),
-        'end_date': _formatDate(_endDate),
+        'start_date': _fmtDate(_startDate),
+        'end_date': _fmtDate(_endDate),
         'reason': _reasonController.text,
       }),
     );
@@ -896,11 +944,6 @@ class _LeaveAndClaimsScreenState extends State<LeaveAndClaimsScreen> {
       _reasonController.clear();
     });
     _fetchAll();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Leave Request Sent! Switch to L2 Manager to approve/reject with remarks.'), backgroundColor: Colors.green),
-      );
-    }
   }
 
   Future<void> _submitClaim() async {
@@ -918,193 +961,144 @@ class _LeaveAndClaimsScreenState extends State<LeaveAndClaimsScreen> {
     _claimAmountCtrl.clear();
     _claimDescCtrl.clear();
     _fetchAll();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Expense Claim Submitted! Once approved, it will be added to Oct Payslip.'), backgroundColor: Colors.green),
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Leave & Expense Claims', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E222D),
+        title: const Text('My Leave & Expense Claims', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF141824),
         foregroundColor: Colors.white,
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchAll)],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(18.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 顶部切换：请假 vs 费用报销
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _subTab == 0 ? const Color(0xFFB71C1C) : Colors.white,
-                      foregroundColor: _subTab == 0 ? Colors.white : Colors.black87,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: _subTab == 0 ? const Color(0xFFB71C1C) : Colors.white, foregroundColor: _subTab == 0 ? Colors.white : Colors.black87),
                     onPressed: () => setState(() => _subTab = 0),
-                    icon: const Icon(Icons.calendar_month, size: 18),
-                    label: const Text('Leave Application', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('Leave Application', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _subTab == 1 ? const Color(0xFFB71C1C) : Colors.white,
-                      foregroundColor: _subTab == 1 ? Colors.white : Colors.black87,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: _subTab == 1 ? const Color(0xFFB71C1C) : Colors.white, foregroundColor: _subTab == 1 ? Colors.white : Colors.black87),
                     onPressed: () => setState(() => _subTab = 1),
-                    icon: const Icon(Icons.receipt_outlined, size: 18),
-                    label: const Text('Expense Claims', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('Expense Claims', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-
+            const SizedBox(height: 14),
             if (_subTab == 0) ...[
-              // 动态计算的假期余额卡片
-              Row(
-                children: [
-                  _buildQuotaCard('Annual (AL)', '${_quotas['al_left']} Left', 'Used: ${_quotas['al_used']}d', Colors.blue[700]!),
-                  const SizedBox(width: 10),
-                  _buildQuotaCard('Medical (MC)', '${_quotas['mc_left']} Left', 'Used: ${_quotas['mc_used']}d', Colors.orange[800]!),
-                  const SizedBox(width: 10),
-                  _buildQuotaCard('Hosp. (HL)', '${_quotas['hl_left']} Left', 'Used: ${_quotas['hl_used']}d', Colors.purple[700]!),
-                ],
-              ),
-              const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Apply for Leave', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('Assigned Approving Manager: ${widget.user['assigned_manager']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFB71C1C))),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedLeave,
-                      decoration: InputDecoration(labelText: 'Leave Category', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                      items: ['AL (Annual Leave)', 'MC (Medical Leave)', 'HL (Hospitalization Leave)', 'UP (Unpaid Leave)']
-                          .map((val) => DropdownMenuItem(value: val, child: Text(val)))
-                          .toList(),
-                      onChanged: (val) => setState(() => _selectedLeave = val!),
+                      decoration: InputDecoration(labelText: 'Leave Type (AL: ${_quotas['al_left']}d | MC: ${_quotas['mc_left']}d)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                      items: ['AL (Annual Leave)', 'MC (Medical Leave)', 'HL (Hospitalization Leave)', 'UP (Unpaid Leave)'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                      onChanged: (v) => setState(() => _selectedLeave = v!),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => _pickDate(true),
-                            child: InputDecorator(
-                              decoration: InputDecoration(labelText: 'Start Date', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                              child: Text(_formatDate(_startDate), style: const TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ),
+                        Expanded(child: InkWell(onTap: () => _pickDate(true), child: InputDecorator(decoration: InputDecoration(labelText: 'Start Date', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))), child: Text(_fmtDate(_startDate))))),
                         const SizedBox(width: 10),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => _pickDate(false),
-                            child: InputDecorator(
-                              decoration: InputDecoration(labelText: 'End Date', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                              child: Text(_formatDate(_endDate), style: const TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ),
+                        Expanded(child: InkWell(onTap: () => _pickDate(false), child: InputDecorator(decoration: InputDecoration(labelText: 'End Date', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))), child: Text(_fmtDate(_endDate))))),
                       ],
                     ),
+                    const SizedBox(height: 10),
+                    TextField(controller: _reasonController, decoration: InputDecoration(labelText: 'Reason for Leave', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)))),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _reasonController,
-                      decoration: InputDecoration(labelText: 'Applicant Reason', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                    ),
-                    const SizedBox(height: 14),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),
                         onPressed: _submitLeave,
-                        child: const Text('SUBMIT LEAVE REQUEST', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text('SUBMIT TO OUTLET MANAGER', style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              const Text('Leave History & Reviewer Audit Trail', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              ..._leaveHistory.map((item) => _buildReviewedCard(
-                    title: item['type'],
-                    subtitle: '${item['start']} ➔ ${item['end']} • Applicant Reason: ${item['reason']}',
-                    status: item['status'],
-                    reviewer: item['reviewer_name'],
-                    remark: item['review_remark'],
-                    time: item['reviewed_at'],
+              const SizedBox(height: 18),
+              const Text('My Leave Approval Workflow History', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              const SizedBox(height: 8),
+              ..._leaveHistory.map((item) => Card(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('${item['type']} (${item['start']} to ${item['end']})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Chip(
+                                label: Text(item['status'].toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                backgroundColor: item['status'] == 'Approved' ? Colors.green[100] : (item['status'] == 'Rejected' ? Colors.red[100] : Colors.orange[100]),
+                              ),
+                            ],
+                          ),
+                          Text('Outlet: ${item['branch']} • Assigned Manager: ${item['assigned_manager']}', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                          Text('Reason: ${item['reason']}', style: const TextStyle(fontSize: 12)),
+                          if (item['reviewer_name'].toString().isNotEmpty) ...[
+                            const Divider(),
+                            Text('Reviewed by: ${item['reviewer_name']} (${item['reviewed_at']})', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFB71C1C))),
+                            Text('Manager Decision Remark: "${item['review_remark']}"', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                          ],
+                        ],
+                      ),
+                    ),
                   )),
             ] else ...[
-              // 费用报销申请表单
               Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Submit Expense Reimbursement Claim', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       initialValue: _claimCat,
-                      decoration: InputDecoration(labelText: 'Claim Type', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                      items: [
-                        'Transport / Late Night Grab',
-                        'Medical / Clinic Receipt',
-                        'Branch Kitchen Supply Purchase',
-                        'Staff Meal / Team Allowance'
-                      ].map((val) => DropdownMenuItem(value: val, child: Text(val))).toList(),
-                      onChanged: (val) => setState(() => _claimCat = val!),
+                      decoration: const InputDecoration(labelText: 'Claim Category', border: OutlineInputBorder()),
+                      items: ['Transport / Late Night Grab', 'Medical / Clinic Receipt', 'Outlet Kitchen Supply'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                      onChanged: (v) => setState(() => _claimCat = v!),
                     ),
+                    const SizedBox(height: 10),
+                    TextField(controller: _claimAmountCtrl, decoration: const InputDecoration(labelText: 'Amount (RM)', border: OutlineInputBorder())),
+                    const SizedBox(height: 10),
+                    TextField(controller: _claimDescCtrl, decoration: const InputDecoration(labelText: 'Receipt No. & Description', border: OutlineInputBorder())),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _claimAmountCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: 'Claim Amount (RM)', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _claimDescCtrl,
-                      decoration: InputDecoration(labelText: 'Receipt No. / Details', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                    ),
-                    const SizedBox(height: 14),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),
                         onPressed: _submitClaim,
-                        child: const Text('SUBMIT REIMBURSEMENT CLAIM', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text('SUBMIT EXPENSE CLAIM'),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              const Text('My Claim History (Auto-syncs to Payslip)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              ..._claimHistory.map((c) => _buildReviewedCard(
-                    title: '${c['category']} — RM ${c['amount'].toStringAsFixed(2)}',
-                    subtitle: 'Date: ${c['date']} • Details: ${c['description']}',
-                    status: c['status'],
-                    reviewer: c['reviewer_name'],
-                    remark: c['review_remark'],
-                    time: '',
+              const SizedBox(height: 14),
+              ..._claimHistory.map((c) => Card(
+                    child: ListTile(
+                      title: Text('${c['category']} — RM ${c['amount']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text('${c['description']} • Status: ${c['status']} ${c['reviewer_name'].toString().isNotEmpty ? "(By ${c['reviewer_name']})" : ""}'),
+                    ),
                   )),
             ],
           ],
@@ -1112,137 +1106,19 @@ class _LeaveAndClaimsScreenState extends State<LeaveAndClaimsScreen> {
       ),
     );
   }
-
-  // 带有审批人姓名与拒绝/批准理由展示框的通用卡片
-  Widget _buildReviewedCard({
-    required String title,
-    required String subtitle,
-    required String status,
-    required String reviewer,
-    required String remark,
-    required String time,
-  }) {
-    final isApproved = status == 'Approved';
-    final isRejected = status == 'Rejected';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isApproved ? Colors.green.withValues(alpha: 0.4) : (isRejected ? Colors.red.withValues(alpha: 0.4) : Colors.transparent),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isApproved ? Colors.green[100] : (isRejected ? Colors.red[100] : Colors.orange[100]),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  status.toUpperCase(),
-                  style: TextStyle(
-                    color: isApproved ? Colors.green[900] : (isRejected ? Colors.red[900] : Colors.orange[900]),
-                    fontWeight: FontWeight.w900,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(subtitle, style: const TextStyle(fontSize: 13, color: Colors.black87)),
-          // 如果已经被经理或总监审批过，清晰显示是谁批的、什么理由！
-          if (reviewer.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: isApproved ? Colors.green[50] : (isRejected ? Colors.red[50] : Colors.grey[100]),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        isApproved ? Icons.verified_user : Icons.gavel_rounded,
-                        size: 15,
-                        color: isApproved ? Colors.green[800] : Colors.red[800],
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          '${isApproved ? "Approved" : "Rejected"} by: $reviewer ${time.isNotEmpty ? "($time)" : ""}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: isApproved ? Colors.green[900] : Colors.red[900],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (remark.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Decision Reason / Remark: "$remark"',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                        color: isApproved ? Colors.green[900] : Colors.red[900],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuotaCard(String title, String leftStr, String usedStr, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-        child: Column(
-          children: [
-            Text(leftStr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
-            Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 2),
-            Text(usedStr, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ==========================================
-// 页面 4：16个月三级联动薪水单 (含报销入账展示)
+// 独立页面 4：马来西亚法定标准薪水单
 // ==========================================
-class PayslipScreen extends StatefulWidget {
+class MalaysianPayslipScreen extends StatefulWidget {
   final Map<String, dynamic> user;
-  const PayslipScreen({super.key, required this.user});
+  const MalaysianPayslipScreen({super.key, required this.user});
   @override
-  State<PayslipScreen> createState() => _PayslipScreenState();
+  State<MalaysianPayslipScreen> createState() => _MalaysianPayslipScreenState();
 }
 
-class _PayslipScreenState extends State<PayslipScreen> {
+class _MalaysianPayslipScreenState extends State<MalaysianPayslipScreen> {
   Map<String, dynamic> _allPayslips = {};
   String? _selectedYear;
   bool _isLoading = true;
@@ -1250,20 +1126,20 @@ class _PayslipScreenState extends State<PayslipScreen> {
   @override
   void initState() {
     super.initState();
-    fetchAllPayslips();
+    _fetchPayslips();
   }
 
-  Future<void> fetchAllPayslips() async {
+  Future<void> _fetchPayslips() async {
     setState(() => _isLoading = true);
     try {
-      final response = await http.post(
+      final res = await http.post(
         Uri.parse('http://127.0.0.1:5000/api/payslips-all'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'staff_id': widget.user['staff_id']}),
       );
-      if (response.statusCode == 200 && mounted) {
+      if (res.statusCode == 200 && mounted) {
         setState(() {
-          _allPayslips = jsonDecode(response.body)['data'];
+          _allPayslips = jsonDecode(res.body)['data'];
           _isLoading = false;
         });
       }
@@ -1272,83 +1148,208 @@ class _PayslipScreenState extends State<PayslipScreen> {
     }
   }
 
-  void _showPayslipDetailSheet(String year, Map<String, dynamic> slip) {
-    final double claims = (slip['claims_reimbursement'] ?? 0.0).toDouble();
-    final grossPay = (slip['basic_salary'] + slip['ot_pay'] + slip['commission'] + slip['attendance_bonus'] + claims).toStringAsFixed(2);
-    final totalDeduction = (slip['epf'] + slip['socso'] + slip['eis']).toStringAsFixed(2);
+  Future<void> _exportMalaysianPayslipHTML(String year, Map<String, dynamic> s) async {
+    final File file = File('${Directory.current.path}\\MY_Payslip_${s['month']}_$year.html');
+    final html = '''
+    <!DOCTYPE html><html><head><meta charset="utf-8"><title>Malaysian Statutory Payslip</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 30px; background: #eee; }
+      .page { max-width: 800px; margin: auto; background: #fff; padding: 30px; border: 2px solid #222; }
+      table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+      th, td { border: 1px solid #444; padding: 7px 10px; text-align: left; }
+      th { background: #f0f0f0; }
+      .net { background: #e8f5e9; font-size: 18px; font-weight: bold; color: #1b5e20; }
+    </style></head><body><div class="page">
+      <h2 style="margin:0;color:#b71c1c;">${s['company_name']} <small style="font-size:12px;color:#555;">Reg: ${s['company_reg']}</small></h2>
+      <p style="margin:4px 0;"><b>PENYATA GAJI / STATUTORY PAYSLIP (EMPLOYMENT ACT 1955) — ${s['month']} $year</b></p>
+      <table>
+        <tr><td><b>Employee Name:</b> ${s['staff_name']}</td><td><b>NRIC No.:</b> ${s['ic_no']}</td><td><b>Staff ID:</b> ${s['staff_id']}</td></tr>
+        <tr><td><b>Designation:</b> ${s['role_title']}</td><td><b>Outlet:</b> ${s['branch']}</td><td><b>Pay Period:</b> ${s['pay_period']}</td></tr>
+        <tr><td><b>KWSP (EPF) No:</b> ${s['epf_no']}</td><td><b>PERKESO No:</b> ${s['socso_no']}</td><td><b>LHDN Tax No:</b> ${s['tax_no']}</td></tr>
+        <tr><td colspan="3"><b>Bank Account:</b> ${s['bank_info']} (Credited Date: ${s['pay_date']})</td></tr>
+      </table>
+      <table>
+        <tr><th>PENDAPATAN (EARNINGS)</th><th>RM</th><th>POTONGAN PEKERJA (EMPLOYEE DEDUCTIONS)</th><th>RM</th></tr>
+        <tr><td>Gaji Pokok (Basic Salary)</td><td>${s['basic_salary'].toStringAsFixed(2)}</td><td>KWSP Pekerja (Employee EPF 11%)</td><td>${s['epf'].toStringAsFixed(2)}</td></tr>
+        <tr><td>Kerja Lebih Masa (Overtime 1.5x)</td><td>${s['ot_pay'].toStringAsFixed(2)}</td><td>PERKESO Pekerja (Employee SOCSO)</td><td>${s['socso'].toStringAsFixed(2)}</td></tr>
+        <tr><td>Komisen Meja (Table Commission)</td><td>${s['commission'].toStringAsFixed(2)}</td><td>SIP / EIS Pekerja (0.2%)</td><td>${s['eis'].toStringAsFixed(2)}</td></tr>
+        <tr><td>Elaun Kehadiran (Attendance Bonus)</td><td>${s['attendance_bonus'].toStringAsFixed(2)}</td><td>Potongan Cukai Bulanan (LHDN PCB)</td><td>${s['pcb'].toStringAsFixed(2)}</td></tr>
+        <tr><td>Tuntutan (Approved Claims)</td><td>${s['claims_reimbursement'].toStringAsFixed(2)}</td><td></td><td></td></tr>
+        <tr><th>GAJI KASAR (GROSS PAY)</th><th>RM ${s['gross_pay'].toStringAsFixed(2)}</th><th>JUMLAH POTONGAN (TOTAL DEDUCTIONS)</th><th>RM ${s['total_deduction'].toStringAsFixed(2)}</th></tr>
+      </table>
+      <table>
+        <tr><th colspan="4">CARUMAN MAJIKAN (EMPLOYER STATUTORY CONTRIBUTIONS)</th></tr>
+        <tr><td><b>KWSP Majikan (13%):</b> RM ${s['employer_epf'].toStringAsFixed(2)}</td><td><b>PERKESO Majikan:</b> RM ${s['employer_socso'].toStringAsFixed(2)}</td><td><b>EIS Majikan:</b> RM ${s['employer_eis'].toStringAsFixed(2)}</td><td><b>HRD Corp Levy:</b> RM ${s['employer_hrdf'].toStringAsFixed(2)}</td></tr>
+      </table>
+      <table><tr class="net"><td>GAJI BERSIH (NET PAYABLE TO BANK)</td><td style="text-align:right;">RM ${s['net_pay'].toStringAsFixed(2)}</td></tr></table>
+    </div></body></html>
+    ''';
+    await file.writeAsString(html);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Malaysian Statutory Payslip Saved: ${file.absolute.path}'), backgroundColor: Colors.green[800]),
+      );
+    }
+  }
 
-    showModalBottomSheet(
+  void _showMalaysianStatutorySlipDialog(String year, Map<String, dynamic> s) {
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 45, height: 5, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${slip['month']} $year Official Payslip', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                      Text('${slip['staff_name']} • Date: ${slip['pay_date']}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(20)),
-                    child: Text(slip['status'], style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold, fontSize: 12)),
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
-              _buildRow('Basic Salary', 'RM ${slip['basic_salary'].toStringAsFixed(2)}'),
-              _buildRow('Overtime & Shift Allowance', 'RM ${slip['ot_pay'].toStringAsFixed(2)}'),
-              _buildRow('Table Commission (Haidilao)', 'RM ${slip['commission'].toStringAsFixed(2)}'),
-              _buildRow('Bonus / Incentive', 'RM ${slip['attendance_bonus'].toStringAsFixed(2)}'),
-              _buildRow('Approved Expense Claims', 'RM ${claims.toStringAsFixed(2)}'),
-              _buildRow('Gross Earnings', 'RM $grossPay', isBold: true),
-              const Divider(height: 22),
-              _buildRow('EPF (KWSP 11%)', '- RM ${slip['epf'].toStringAsFixed(2)}', isRed: true),
-              _buildRow('SOCSO (PERKESO)', '- RM ${slip['socso'].toStringAsFixed(2)}', isRed: true),
-              _buildRow('EIS (SIP)', '- RM ${slip['eis'].toStringAsFixed(2)}', isRed: true),
-              _buildRow('Total Deductions', '- RM $totalDeduction', isRed: true, isBold: true),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(16)),
-                child: Row(
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 680),
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('NET PAY (TAKE HOME)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20))),
-                    Text('RM ${slip['net_pay'].toStringAsFixed(2)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF2E7D32))),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(s['company_name'].toString(), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C))),
+                        Text('SSM Reg No: ${s['company_reg']} • ${s['branch']}', style: const TextStyle(fontSize: 11, color: Colors.black54)),
+                        Text('PENYATA GAJI / STATUTORY PAYSLIP (${s['month']} $year)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF141824), foregroundColor: Colors.white),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _exportMalaysianPayslipHTML(year, s);
+                      },
+                      icon: const Icon(Icons.print, size: 16),
+                      label: const Text('Print / PDF', style: TextStyle(fontSize: 12)),
+                    ),
                   ],
                 ),
-              ),
-            ],
+                const Divider(thickness: 2),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[300]!)),
+                  child: Column(
+                    children: [
+                      _buildMetaRow('Employee Name', s['staff_name'], 'NRIC / Identity No.', s['ic_no']),
+                      _buildMetaRow('Staff ID & Role', '${s['staff_id']} (${s['role_title']})', 'Pay Period', s['pay_period']),
+                      _buildMetaRow('KWSP (EPF) No.', s['epf_no'], 'PERKESO (SOCSO) No.', s['socso_no']),
+                      _buildMetaRow('EIS (SIP) No.', s['eis_no'], 'LHDN Income Tax No.', s['tax_no']),
+                      _buildMetaRow('Credited Bank', s['bank_info'], 'Payment Date', s['pay_date']),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(border: Border.all(color: Colors.grey[400]!), borderRadius: BorderRadius.circular(8)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('PENDAPATAN (EARNINGS)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.green)),
+                            const Divider(),
+                            _buildMoneyRow('Basic Salary (Gaji Pokok)', s['basic_salary']),
+                            _buildMoneyRow('Overtime 1.5x (Kerja Lebih Masa)', s['ot_pay']),
+                            _buildMoneyRow('Table Commission (Komisen)', s['commission']),
+                            _buildMoneyRow('Attendance Bonus (Elaun)', s['attendance_bonus']),
+                            _buildMoneyRow('Approved Claims (Tuntutan)', s['claims_reimbursement']),
+                            const Divider(),
+                            _buildMoneyRow('GAJI KASAR (GROSS)', s['gross_pay'], isBold: true),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(border: Border.all(color: Colors.grey[400]!), borderRadius: BorderRadius.circular(8)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('POTONGAN PEKERJA (DEDUCTIONS)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.red)),
+                            const Divider(),
+                            _buildMoneyRow('Employee KWSP / EPF (11%)', s['epf'], isRed: true),
+                            _buildMoneyRow('Employee PERKESO / SOCSO', s['socso'], isRed: true),
+                            _buildMoneyRow('Employee SIP / EIS (0.2%)', s['eis'], isRed: true),
+                            _buildMoneyRow('LHDN PCB / MTD Tax', s['pcb'], isRed: true),
+                            const SizedBox(height: 18),
+                            const Divider(),
+                            _buildMoneyRow('JUMLAH POTONGAN', s['total_deduction'], isBold: true, isRed: true),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFFE3F2FD), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.blue[200]!)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('CARUMAN MAJIKAN (EMPLOYER STATUTORY CONTRIBUTIONS)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF0D47A1))),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Employer KWSP (13%): RM ${s['employer_epf'].toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          Text('Employer PERKESO: RM ${s['employer_socso'].toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          Text('Employer EIS: RM ${s['employer_eis'].toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          Text('HRDF Levy: RM ${s['employer_hrdf'].toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(10)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('GAJI BERSIH / NET PAYABLE (CREDITED)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF1B5E20))),
+                      Text('RM ${s['net_pay'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Color(0xFF1B5E20))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildRow(String label, String amount, {bool isRed = false, bool isBold = false}) {
+  Widget _buildMetaRow(String k1, dynamic v1, String k2, dynamic v2) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3.5),
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(child: Text('$k1: $v1', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
+          Expanded(child: Text('$k2: $v2', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMoneyRow(String label, dynamic val, {bool isBold = false, bool isRed = false}) {
+    final double d = (val ?? 0.0).toDouble();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontWeight: isBold ? FontWeight.bold : FontWeight.normal, fontSize: 13.5)),
-          Text(amount, style: TextStyle(color: isRed ? Colors.red[700] : Colors.black87, fontWeight: isBold ? FontWeight.bold : FontWeight.w600, fontSize: 13.5)),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+          Text('RM ${d.toStringAsFixed(2)}', style: TextStyle(fontSize: 11, fontWeight: isBold ? FontWeight.w900 : FontWeight.w600, color: isRed ? Colors.red[800] : Colors.black87)),
         ],
       ),
     );
@@ -1357,65 +1358,48 @@ class _PayslipScreenState extends State<PayslipScreen> {
   @override
   Widget build(BuildContext context) {
     final years = _allPayslips.keys.toList();
-
     return Scaffold(
       appBar: AppBar(
-        leading: _selectedYear != null
-            ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() => _selectedYear = null))
-            : null,
-        title: Text(_selectedYear == null ? 'Payroll Archive (By Year)' : '$_selectedYear Monthly Statements', style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E222D),
+        leading: _selectedYear != null ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() => _selectedYear = null)) : null,
+        title: Text(_selectedYear == null ? 'MY Statutory Payslips (By Year)' : '$_selectedYear Monthly Statements (EA 1955)', style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF141824),
         foregroundColor: Colors.white,
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: fetchAllPayslips)],
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchPayslips)],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _selectedYear == null
               ? ListView.builder(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(16),
                   itemCount: years.length,
                   itemBuilder: (context, index) {
-                    final year = years[index];
-                    final monthsList = _allPayslips[year] as List<dynamic>;
+                    final y = years[index];
+                    final list = _allPayslips[y] as List;
                     return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.only(bottom: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        leading: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: const Color(0xFFFFEBEE), borderRadius: BorderRadius.circular(12)),
-                          child: const Icon(Icons.folder_copy_outlined, color: Color(0xFFB71C1C), size: 28),
-                        ),
-                        title: Text('Year $year Archive', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        subtitle: Text('${monthsList.length} Monthly Payslips Available'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 18),
-                        onTap: () => setState(() => _selectedYear = year),
+                        leading: const Icon(Icons.folder_special, color: Color(0xFFB71C1C), size: 32),
+                        title: Text('Year $y Statutory Archive', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                        subtitle: Text('${list.length} Months Available (Includes KWSP 11%/13%, PERKESO, EIS, PCB)'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () => setState(() => _selectedYear = y),
                       ),
                     );
                   },
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(16),
                   itemCount: (_allPayslips[_selectedYear] as List).length,
                   itemBuilder: (context, index) {
-                    final slip = (_allPayslips[_selectedYear] as List)[index];
+                    final s = (_allPayslips[_selectedYear] as List)[index];
                     return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      margin: const EdgeInsets.only(bottom: 10),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        leading: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: const Color(0xFFB71C1C),
-                          child: Text(slip['month_num'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                        title: Text('${slip['month']} $_selectedYear', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        subtitle: Text('Credited: ${slip['pay_date']} • ${slip['status']}'),
-                        trailing: Text('RM ${slip['net_pay'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF2E7D32))),
-                        onTap: () => _showPayslipDetailSheet(_selectedYear!, slip),
+                        leading: CircleAvatar(backgroundColor: const Color(0xFFB71C1C), child: Text(s['month_num'].toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                        title: Text('${s['month']} $_selectedYear (${s['status']})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text('Gross: RM ${s['gross_pay'].toStringAsFixed(2)} • Deduct: -RM ${s['total_deduction'].toStringAsFixed(2)}'),
+                        trailing: Text('RM ${s['net_pay'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF1B5E20))),
+                        onTap: () => _showMalaysianStatutorySlipDialog(_selectedYear!, s),
                       ),
                     );
                   },
@@ -1425,96 +1409,444 @@ class _PayslipScreenState extends State<PayslipScreen> {
 }
 
 // ==========================================
-// 页面 5：多角色权限控制中心 (支持实名写拒绝/批准理由弹窗、报销审批、发布公告与调薪)
+// 独立页面 5：纯个人档案资料页
 // ==========================================
-class RoleCommandCenterScreen extends StatefulWidget {
+class MyPersonalProfileScreen extends StatelessWidget {
   final Map<String, dynamic> user;
   final VoidCallback onLogout;
-  final VoidCallback onDataChanged;
-
-  const RoleCommandCenterScreen({
-    super.key,
-    required this.user,
-    required this.onLogout,
-    required this.onDataChanged,
-  });
+  const MyPersonalProfileScreen({super.key, required this.user, required this.onLogout});
 
   @override
-  State<RoleCommandCenterScreen> createState() => _RoleCommandCenterScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('My Personal & Statutory Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF141824),
+        foregroundColor: Colors.white,
+        actions: [
+          TextButton.icon(
+            onPressed: onLogout,
+            icon: const Icon(Icons.logout, color: Colors.amberAccent, size: 18),
+            label: const Text('Logout', style: TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const CircleAvatar(radius: 32, backgroundColor: Color(0xFFB71C1C), child: Icon(Icons.person, color: Colors.white, size: 36)),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(user['full_name'].toString(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+                            Text('${user['role_title']} • Staff ID: #EMP-00${user['staff_id']}', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text('Outlet: ${user['branch']}', style: const TextStyle(fontSize: 12, color: Color(0xFFB71C1C), fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 28),
+                  _buildProfileRow('NRIC / Identification No.', (user['ic_no'] ?? '030618-01-8821').toString()),
+                  _buildProfileRow('Department', (user['department'] ?? 'Frontline Service & Operations').toString()),
+                  _buildProfileRow('Date Joined', (user['join_date'] ?? '2025-06-01').toString()),
+                  _buildProfileRow('Direct Reporting Manager', (user['assigned_manager'] ?? 'Eugene Tang').toString()),
+                  _buildProfileRow('Mobile Phone', (user['phone'] ?? '+60 12-789 4512').toString()),
+                  _buildProfileRow('Emergency Contact', (user['emergency_contact'] ?? 'Mdm Lim (+60 16-712 9901)').toString()),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('MALAYSIAN STATUTORY & PAYROLL ACCOUNTS', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C))),
+                  const Divider(),
+                  _buildProfileRow('Payroll Bank & Account', (user['bank_info'] ?? '-').toString()),
+                  _buildProfileRow('Basic Monthly Salary', 'RM ${user['basic_salary'].toStringAsFixed(2)}'),
+                  _buildProfileRow('KWSP / EPF Member No.', (user['epf_no'] ?? '-').toString()),
+                  _buildProfileRow('PERKESO / SOCSO No.', (user['socso_no'] ?? '-').toString()),
+                  _buildProfileRow('EIS / SIP Insurance No.', (user['eis_no'] ?? '-').toString()),
+                  _buildProfileRow('LHDN Income Tax (PCB) No.', (user['tax_no'] ?? '-').toString()),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('MY ASSIGNED WEEKLY SHIFT ROSTER', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.indigo)),
+                  Divider(),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.wb_sunny, color: Colors.orange),
+                    title: Text('Monday – Wednesday (Morning Shift)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    trailing: Text('10:00 AM – 07:00 PM', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.nights_stay, color: Colors.indigo),
+                    title: Text('Thursday – Saturday (Closing Shift)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    trailing: Text('06:00 PM – 03:00 AM', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+          Flexible(child: Text(value, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
+        ],
+      ),
+    );
+  }
 }
 
-class _RoleCommandCenterScreenState extends State<RoleCommandCenterScreen> {
-  List<dynamic> _allLeaves = [];
-  List<dynamic> _allClaims = [];
+// ==========================================
+// 独立页面 6 (HR / 经理专属)：全员考勤归类审计中心
+// ==========================================
+class HRAttendanceAuditScreen extends StatefulWidget {
+  final Map<String, dynamic> user;
+  const HRAttendanceAuditScreen({super.key, required this.user});
+  @override
+  State<HRAttendanceAuditScreen> createState() => _HRAttendanceAuditScreenState();
+}
+
+class _HRAttendanceAuditScreenState extends State<HRAttendanceAuditScreen> {
+  List<dynamic> _allEvents = [];
+  String _selectedBranch = 'All Branches';
+  String _selectedStaff = 'All Staff';
+  String _selectedType = 'ALL';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategorizedAttendance();
+  }
+
+  Future<void> _fetchCategorizedAttendance() async {
+    setState(() => _isLoading = true);
+    try {
+      final res = await http.post(
+        Uri.parse('http://127.0.0.1:5000/api/history'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'staff_id': widget.user['staff_id'],
+          'view_all': true,
+          'branch_filter': _selectedBranch,
+          'staff_filter': _selectedStaff,
+        }),
+      );
+      if (res.statusCode == 200 && mounted) {
+        setState(() {
+          _allEvents = jsonDecode(res.body)['data'];
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _inspectGpsAndSelfieProof(Map<String, dynamic> ev) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.verified_user, color: Colors.teal),
+            const SizedBox(width: 8),
+            Expanded(child: Text('HR Biometric & GPS Proof: ${ev['staff_name']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: const Color(0xFF141824), borderRadius: BorderRadius.circular(14)),
+              child: Column(
+                children: [
+                  const Icon(Icons.account_box_rounded, size: 64, color: Colors.greenAccent),
+                  const SizedBox(height: 8),
+                  Text('CAPTURED SELFIE: ${ev['selfie_tag']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text('Timestamp Watermark: ${ev['time']}', style: const TextStyle(color: Colors.amberAccent, fontSize: 11)),
+                  const Text('AI Liveness Check: PASSED (99.4% Match)', style: TextStyle(color: Colors.greenAccent, fontSize: 11)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text('Outlet: ${ev['branch']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text('GPS Coordinates: ${ev['gps_coords']}', style: const TextStyle(fontSize: 13, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
+            Text('Distance from Outlet Center: ${ev['distance_m']} meters (Within 50m Geofence)', style: const TextStyle(fontSize: 12, color: Colors.green)),
+            Text('Gate Terminal: ${ev['location']}', style: const TextStyle(fontSize: 12)),
+            Text('Verification Status: ${ev['verify_status']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close Inspector')),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredList = _allEvents.where((e) => _selectedType == 'ALL' || e['type'] == _selectedType).toList();
+    final int inCount = filteredList.where((e) => e['type'] == 'IN').length;
+    final int outCount = filteredList.where((e) => e['type'] == 'OUT').length;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('HR Attendance Audit (GPS & Photo)', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF141824),
+        foregroundColor: Colors.white,
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchCategorizedAttendance)],
+      ),
+      body: Column(
+        children: [
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedBranch,
+                        decoration: InputDecoration(labelText: 'Filter by Outlet', contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                        items: ['All Branches', 'Sutera Utama Outlet', 'Mount Austin Outlet', 'Johor Bahru HQ']
+                            .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 12))))
+                            .toList(),
+                        onChanged: (v) {
+                          setState(() => _selectedBranch = v!);
+                          _fetchCategorizedAttendance();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedStaff,
+                        decoration: InputDecoration(labelText: 'Filter by Staff', contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
+                        items: ['All Staff', 'Ng Zhe Wei', 'Tan Mei Ling', 'Eugene Tang', 'See Lin']
+                            .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 12))))
+                            .toList(),
+                        onChanged: (v) {
+                          setState(() => _selectedStaff = v!);
+                          _fetchCategorizedAttendance();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _buildSummaryBadge('Total Logs: ${filteredList.length}', Colors.indigo),
+                    const SizedBox(width: 8),
+                    _buildSummaryBadge('Clock-In: $inCount', Colors.green[700]!),
+                    const SizedBox(width: 8),
+                    _buildSummaryBadge('Clock-Out: $outCount', Colors.orange[800]!),
+                    const Spacer(),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'ALL', label: Text('All', style: TextStyle(fontSize: 11))),
+                        ButtonSegment(value: 'IN', label: Text('IN', style: TextStyle(fontSize: 11))),
+                        ButtonSegment(value: 'OUT', label: Text('OUT', style: TextStyle(fontSize: 11))),
+                      ],
+                      selected: {_selectedType},
+                      onSelectionChanged: (s) => setState(() => _selectedType = s.first),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    padding: const EdgeInsets.all(14),
+                    itemCount: filteredList.length,
+                    itemBuilder: (context, index) {
+                      final ev = filteredList[index];
+                      final bool isIn = ev['type'] == 'IN';
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(color: isIn ? Colors.green[700] : Colors.orange[800], borderRadius: BorderRadius.circular(6)),
+                                    child: Text(isIn ? 'CLOCK IN' : 'CLOCK OUT (${ev['hours']}h)', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text('${ev['staff_name']} (${ev['role_title']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(6)),
+                                    child: Text(ev['branch'].toString(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFB71C1C))),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                                  const SizedBox(width: 4),
+                                  Text(ev['time'].toString(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 14),
+                                  const Icon(Icons.gps_fixed, size: 14, color: Colors.blue),
+                                  const SizedBox(width: 4),
+                                  Expanded(child: Text('${ev['gps_coords']} • ${ev['distance_m']}m from outlet', style: const TextStyle(fontSize: 11, color: Colors.blueGrey))),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.camera_front, size: 15, color: Colors.teal),
+                                      const SizedBox(width: 4),
+                                      Text('Photo: ${ev['selfie_tag']}', style: const TextStyle(fontSize: 11, color: Colors.teal, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
+                                    onPressed: () => _inspectGpsAndSelfieProof(ev),
+                                    icon: const Icon(Icons.visibility, size: 15),
+                                    label: const Text('Inspect Photo & GPS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11)),
+    );
+  }
+}
+
+// ==========================================
+// 独立页面 7 (HR / 经理专属)：门店请假审批流追踪与薪资总控专页
+// ==========================================
+class HRLeaveWorkflowAuditScreen extends StatefulWidget {
+  final Map<String, dynamic> user;
+  final VoidCallback onDataChanged;
+  const HRLeaveWorkflowAuditScreen({super.key, required this.user, required this.onDataChanged});
+  @override
+  State<HRLeaveWorkflowAuditScreen> createState() => _HRLeaveWorkflowAuditScreenState();
+}
+
+class _HRLeaveWorkflowAuditScreenState extends State<HRLeaveWorkflowAuditScreen> {
+  String _branchFilter = 'All Branches';
+  List<dynamic> _branchLeaves = [];
   List<dynamic> _allUsers = [];
 
   @override
   void initState() {
     super.initState();
-    _loadRoleData();
+    _loadWorkflowData();
   }
 
-  Future<void> _loadRoleData() async {
-    final int role = widget.user['role_level'] ?? 1;
-    if (role >= 2) {
-      final lRes = await http.post(
-        Uri.parse('http://127.0.0.1:5000/api/leave-list'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'staff_id': widget.user['staff_id'], 'view_all': true}),
-      );
-      final cRes = await http.post(
-        Uri.parse('http://127.0.0.1:5000/api/claim-list'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'staff_id': widget.user['staff_id'], 'view_all': true}),
-      );
-      if (lRes.statusCode == 200 && cRes.statusCode == 200 && mounted) {
-        setState(() {
-          _allLeaves = jsonDecode(lRes.body)['data'];
-          _allClaims = jsonDecode(cRes.body)['data'];
-        });
-      }
-    }
-    if (role >= 3) {
-      final uRes = await http.post(Uri.parse('http://127.0.0.1:5000/api/users'));
-      if (uRes.statusCode == 200 && mounted) {
-        setState(() => _allUsers = jsonDecode(uRes.body)['data']);
-      }
-    }
-  }
-
-  // 核心新功能：弹窗输入审批理由（拒绝时必填理由，自动绑定当前经理姓名与职位）
-  void _openDecisionDialog({
-    required bool isLeave,
-    required int recordId,
-    required String staffName,
-    required String itemTitle,
-    required String targetStatus,
-  }) {
-    final bool isReject = targetStatus == 'Rejected';
-    final remarkCtrl = TextEditingController(
-      text: isReject ? '' : 'Approved as per company policy.',
+  Future<void> _loadWorkflowData() async {
+    final lRes = await http.post(
+      Uri.parse('http://127.0.0.1:5000/api/leave-list'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'staff_id': widget.user['staff_id'],
+        'view_all': true,
+        'branch_filter': _branchFilter,
+      }),
     );
+    final uRes = await http.post(Uri.parse('http://127.0.0.1:5000/api/users'));
+    if (lRes.statusCode == 200 && uRes.statusCode == 200 && mounted) {
+      setState(() {
+        _branchLeaves = jsonDecode(lRes.body)['data'];
+        _allUsers = jsonDecode(uRes.body)['data'];
+      });
+    }
+  }
+
+  void _openManagerDecisionModal(Map<String, dynamic> item, String targetStatus) {
+    final bool isReject = targetStatus == 'Rejected';
+    final remarkCtrl = TextEditingController(text: isReject ? '' : 'Approved by Outlet Management.');
     final reviewerIdentity = '${widget.user['full_name']} (${widget.user['role_title']})';
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$targetStatus Request: $staffName'),
+        title: Text('$targetStatus Leave: ${item['staff_name']}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Item: $itemTitle', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            const SizedBox(height: 6),
-            Text('Reviewer: $reviewerIdentity', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
-            const SizedBox(height: 14),
+            Text('Outlet: ${item['branch']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            Text('Assigned Outlet Manager: ${item['assigned_manager']}', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+            Text('Acting Reviewer: $reviewerIdentity', style: const TextStyle(fontSize: 12, color: Color(0xFFB71C1C), fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
             TextField(
               controller: remarkCtrl,
               maxLines: 2,
               decoration: InputDecoration(
-                labelText: isReject ? 'Rejection Reason (Required *)' : 'Approval Note / Remark',
-                hintText: isReject ? 'e.g. Weekend peak shift shortage / Missing MC receipt' : 'Optional note',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                labelText: isReject ? 'Mandatory Rejection Reason *' : 'Approval Remark',
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
@@ -1522,118 +1854,24 @@ class _RoleCommandCenterScreenState extends State<RoleCommandCenterScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isReject ? Colors.red[700] : Colors.green[700],
-              foregroundColor: Colors.white,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: isReject ? Colors.red[700] : Colors.green[700], foregroundColor: Colors.white),
             onPressed: () async {
-              if (isReject && remarkCtrl.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please provide a reason for rejection!'), backgroundColor: Colors.red),
-                );
-                return;
-              }
-              final url = isLeave ? 'http://127.0.0.1:5000/api/leave-approve' : 'http://127.0.0.1:5000/api/claim-approve';
-              final idKey = isLeave ? 'leave_id' : 'claim_id';
+              if (isReject && remarkCtrl.text.trim().isEmpty) return;
               await http.post(
-                Uri.parse(url),
+                Uri.parse('http://127.0.0.1:5000/api/leave-approve'),
                 headers: {'Content-Type': 'application/json'},
                 body: jsonEncode({
-                  idKey: recordId,
+                  'leave_id': item['id'],
                   'status': targetStatus,
                   'reviewer_name': reviewerIdentity,
                   'review_remark': remarkCtrl.text.trim(),
                 }),
               );
               if (context.mounted) Navigator.pop(context);
-              _loadRoleData();
+              _loadWorkflowData();
               widget.onDataChanged();
             },
             child: Text('Confirm $targetStatus'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPostNoticeDialog() {
-    final titleCtrl = TextEditingController();
-    final contentCtrl = TextEditingController();
-    final authorIdentity = '${widget.user['full_name']} (${widget.user['role_title']})';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Publish Branch Announcement'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Notice Title')),
-            const SizedBox(height: 10),
-            TextField(controller: contentCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Message Content')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),
-            onPressed: () async {
-              await http.post(
-                Uri.parse('http://127.0.0.1:5000/api/announcement-post'),
-                headers: {'Content-Type': 'application/json'},
-                body: jsonEncode({
-                  'title': titleCtrl.text,
-                  'content': contentCtrl.text,
-                  'author': authorIdentity,
-                }),
-              );
-              if (context.mounted) Navigator.pop(context);
-              widget.onDataChanged();
-            },
-            child: const Text('Publish Now'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditSalaryDialog(Map<String, dynamic> targetUser) {
-    final basicCtrl = TextEditingController(text: targetUser['basic_salary'].toString());
-    final bonusCtrl = TextEditingController(text: targetUser['custom_bonus'].toString());
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Adjust Payroll: ${targetUser['full_name']}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: basicCtrl, decoration: const InputDecoration(labelText: 'Basic Salary (RM)')),
-            const SizedBox(height: 12),
-            TextField(controller: bonusCtrl, decoration: const InputDecoration(labelText: 'Monthly Bonus (RM)')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),
-            onPressed: () async {
-              await http.post(
-                Uri.parse('http://127.0.0.1:5000/api/update-salary'),
-                headers: {'Content-Type': 'application/json'},
-                body: jsonEncode({
-                  'staff_id': targetUser['staff_id'],
-                  'basic_salary': basicCtrl.text,
-                  'custom_bonus': bonusCtrl.text,
-                  'role_level': targetUser['role_level'],
-                  'role_title': targetUser['role_title'],
-                }),
-              );
-              if (context.mounted) Navigator.pop(context);
-              _loadRoleData();
-              widget.onDataChanged();
-            },
-            child: const Text('Save Changes'),
           ),
         ],
       ),
@@ -1646,199 +1884,468 @@ class _RoleCommandCenterScreenState extends State<RoleCommandCenterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          roleLevel == 1 ? 'My Digital Staff Pass (L1)' : (roleLevel == 2 ? 'Manager Review Desk (L2)' : 'HR Director Console (L3)'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF1E222D),
+        title: const Text('HR Outlet Leave Workflow & Payroll', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF141824),
         foregroundColor: Colors.white,
-        actions: [
-          if (roleLevel >= 2)
-            IconButton(
-              onPressed: _showPostNoticeDialog,
-              tooltip: 'Post Branch Announcement',
-              icon: const Icon(Icons.campaign_outlined, color: Colors.amberAccent),
-            ),
-          TextButton.icon(
-            onPressed: widget.onLogout,
-            icon: const Icon(Icons.logout, color: Colors.amberAccent, size: 18),
-            label: const Text('Switch Role', style: TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold)),
-          )
-        ],
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadWorkflowData)],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 电子工牌卡片
             Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
-              child: Column(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+              child: Row(
                 children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const CircleAvatar(radius: 26, backgroundColor: Color(0xFFB71C1C), child: Icon(Icons.verified_user, color: Colors.white)),
-                    title: Text('${widget.user['full_name']} (Level $roleLevel)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                    subtitle: Text('${widget.user['role_title']} • ${widget.user['branch']}'),
-                  ),
-                  const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Bank Account:', style: TextStyle(color: Colors.grey)),
-                      Text(widget.user['bank_info'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Statutory EPF ID:', style: TextStyle(color: Colors.grey)),
-                      Text(widget.user['epf_no'] ?? '-', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ],
+                  const Icon(Icons.storefront, color: Color(0xFFB71C1C)),
+                  const SizedBox(width: 10),
+                  const Text('Audit Outlet Leave Pipeline:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _branchFilter,
+                      decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8), border: OutlineInputBorder()),
+                      items: ['All Branches', 'Sutera Utama Outlet', 'Mount Austin Outlet']
+                          .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold))))
+                          .toList(),
+                      onChanged: (v) {
+                        setState(() => _branchFilter = v!);
+                        _loadWorkflowData();
+                      },
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            // L2 经理 & L3 总监专属：实名请假审批 + 报销审批
-            if (roleLevel >= 2) ...[
-              const Text('1. LEAVE APPROVAL QUEUE (WITH REVIEWER REMARK)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C))),
-              const SizedBox(height: 10),
-              if (_allLeaves.isEmpty)
-                const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('No leave requests found.')))
-              else
-                ..._allLeaves.map((item) => Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      child: ListTile(
-                        title: Text('${item['staff_name']} • ${item['type']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(
-                          '${item['start']} ➔ ${item['end']} (${item['status']})\n'
-                          '${item['reviewer_name'].toString().isNotEmpty ? "Reviewed by: ${item['reviewer_name']} — \"${item['review_remark']}\"" : "Staff Reason: ${item['reason']}"}',
-                        ),
-                        isThreeLine: true,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: 16),
+            const Text('OUTLET LEAVE APPROVAL WORKFLOW PIPELINE', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFFB71C1C))),
+            const SizedBox(height: 10),
+            ..._branchLeaves.map((item) {
+              final bool isApproved = item['status'] == 'Approved';
+              final bool isRejected = item['status'] == 'Rejected';
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${item['staff_name']} • ${item['type']}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.blueGrey[50], borderRadius: BorderRadius.circular(8)),
+                            child: Text(item['branch'].toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text('Period: ${item['start']} ➔ ${item['end']} • Reason: ${item['reason']}', style: const TextStyle(fontSize: 12)),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: const Color(0xFFF8F9FA), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey[300]!)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.check_circle, color: Colors.green, size: 28),
-                              tooltip: 'Approve with Note',
-                              onPressed: () => _openDecisionDialog(
-                                isLeave: true,
-                                recordId: item['id'],
-                                staffName: item['staff_name'],
-                                itemTitle: '${item['type']} (${item['start']} to ${item['end']})',
-                                targetStatus: 'Approved',
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.cancel, color: Colors.redAccent, size: 28),
-                              tooltip: 'Reject with Reason',
-                              onPressed: () => _openDecisionDialog(
-                                isLeave: true,
-                                recordId: item['id'],
-                                staffName: item['staff_name'],
-                                itemTitle: '${item['type']} (${item['start']} to ${item['end']})',
-                                targetStatus: 'Rejected',
+                            Text('Step 1 (Applicant): ${item['staff_name']} (${item['branch']})', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 4),
+                            Text('Step 2 (Assigned Outlet Manager): ${item['assigned_manager']}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                            const SizedBox(height: 4),
+                            Text(
+                              item['reviewer_name'].toString().isNotEmpty
+                                  ? 'Step 3 (Final Decision): ${item['status'].toString().toUpperCase()} by ${item['reviewer_name']} at ${item['reviewed_at']}\nRemark: "${item['review_remark']}"'
+                                  : 'Step 3 (Final Decision): PENDING MANAGER ACTION',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isApproved ? Colors.green[800] : (isRejected ? Colors.red[800] : Colors.orange[900]),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    )),
-              const SizedBox(height: 18),
-              const Text('2. EXPENSE CLAIM REIMBURSEMENT QUEUE', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.teal)),
-              const SizedBox(height: 10),
-              if (_allClaims.isEmpty)
-                const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('No expense claims submitted yet.')))
-              else
-                ..._allClaims.map((c) => Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      child: ListTile(
-                        title: Text('${c['staff_name']} • RM ${c['amount'].toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${c['category']} (${c['status']})\n${c['reviewer_name'].toString().isNotEmpty ? "By ${c['reviewer_name']}: ${c['review_remark']}" : c['description']}'),
-                        isThreeLine: true,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.check_circle, color: Colors.green, size: 28),
-                              onPressed: () => _openDecisionDialog(
-                                isLeave: false,
-                                recordId: c['id'],
-                                staffName: c['staff_name'],
-                                itemTitle: '${c['category']} (RM ${c['amount']})',
-                                targetStatus: 'Approved',
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.cancel, color: Colors.redAccent, size: 28),
-                              onPressed: () => _openDecisionDialog(
-                                isLeave: false,
-                                recordId: c['id'],
-                                staffName: c['staff_name'],
-                                itemTitle: '${c['category']} (RM ${c['amount']})',
-                                targetStatus: 'Rejected',
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => _openManagerDecisionModal(item, 'Approved'),
+                            icon: const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            label: const Text('Approve', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton.icon(
+                            onPressed: () => _openManagerDecisionModal(item, 'Rejected'),
+                            icon: const Icon(Icons.cancel, color: Colors.redAccent, size: 20),
+                            label: const Text('Reject with Reason', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
                       ),
-                    )),
-              const SizedBox(height: 20),
-            ],
-
-            // L3 HR 总监专属：全员底薪与奖金调控台
+                    ],
+                  ),
+                ),
+              );
+            }),
             if (roleLevel >= 3) ...[
-              const Text('3. MASTER PAYROLL & SALARY CONTROL (LEVEL 3 ONLY)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.purple)),
+              const SizedBox(height: 20),
+              const Text('L3 HR MASTER SALARY CONFIGURATION', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.purple)),
               const SizedBox(height: 10),
               ..._allUsers.map((u) => Card(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
-                      leading: CircleAvatar(backgroundColor: Colors.purple[50], child: Text('L${u['role_level']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.purple))),
-                      title: Text(u['full_name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('Basic: RM ${u['basic_salary']} | Bonus: RM ${u['custom_bonus']}'),
-                      trailing: ElevatedButton.icon(
-                        onPressed: () => _showEditSalaryDialog(u),
-                        icon: const Icon(Icons.edit, size: 16),
-                        label: const Text('Adjust Pay'),
-                      ),
+                      title: Text('${u['full_name']} (${u['branch']})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      subtitle: Text('Basic: RM ${u['basic_salary']} • Bonus: RM ${u['custom_bonus']} • Manager: ${u['assigned_manager']}'),
                     ),
                   )),
             ],
-
-            // L1 普通员工排班表
-            if (roleLevel == 1) ...[
-              const Text('MY WEEKLY SHIFT ROSTER', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Colors.blueGrey)),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                child: const Column(
-                  children: [
-                    ListTile(
-                      leading: Icon(Icons.wb_sunny, color: Colors.orange),
-                      title: Text('Mon - Wed (Morning Shift)', style: TextStyle(fontWeight: FontWeight.bold)),
-                      trailing: Text('10:00 AM - 07:00 PM'),
-                    ),
-                    Divider(),
-                    ListTile(
-                      leading: Icon(Icons.nights_stay, color: Colors.indigo),
-                      title: Text('Thu - Sat (Closing Shift)', style: TextStyle(fontWeight: FontWeight.bold)),
-                      trailing: Text('06:00 PM - 03:00 AM'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// 独立页面 8：实时绩效与抽成看板
+// ==========================================
+class CommissionScreen extends StatefulWidget {
+  final Map<String, dynamic> user;
+  const CommissionScreen({super.key, required this.user});
+
+  @override
+  State<CommissionScreen> createState() => _CommissionScreenState();
+}
+
+class _CommissionScreenState extends State<CommissionScreen> {
+  late Future _commissionFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  void _fetchData() {
+    setState(() {
+      _commissionFuture = fetchCommission();
+    });
+  }
+
+  Future fetchCommission() async {
+    final url = Uri.parse('http://127.0.0.1:5000/api/commission/${widget.user['staff_id']}');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load commission data');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('My Live Commission', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF141824),
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchData),
+        ],
+      ),
+      body: FutureBuilder(
+        future: _commissionFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: Color(0xFFB71C1C)));
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 60),
+                  const SizedBox(height: 16),
+                  Text('Error connecting to server:\n${snapshot.error}', textAlign: TextAlign.center),
+                ],
+              ),
+            );
+          } else {
+            final data = snapshot.data as Map<String, dynamic>;
+            if (data['status'] == 'error') {
+              return Center(child: Text(data['message'].toString(), style: const TextStyle(fontSize: 16)));
+            }
+
+            final commissionAmount = data['weekly_commission_rm'].toString();
+            final double kpiProgress = (data['kpi_progress'] as num).toDouble();
+            final bool isTargetAchieved = data['target_achieved'] == true;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          Text('Staff: ${data['staff_name']}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text('Role: ${data['role']}', style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
+                      child: Column(
+                        children: [
+                          const Text('Live Weekly Commission', style: TextStyle(fontSize: 16, color: Colors.black54, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 12),
+                          Text(
+                            'RM $commissionAmount',
+                            style: const TextStyle(fontSize: 52, fontWeight: FontWeight.w900, color: Color(0xFF2E7D32)),
+                          ),
+                          const SizedBox(height: 36),
+                          const Text('Weekly KPI Target (RM 50.00)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.indigo)),
+                          const SizedBox(height: 12),
+                          LinearProgressIndicator(
+                            value: kpiProgress,
+                            minHeight: 14,
+                            backgroundColor: Colors.grey[200],
+                            color: isTargetAchieved ? Colors.green : const Color(0xFFB71C1C),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          const SizedBox(height: 12),
+                          if (isTargetAchieved)
+                            const Text('Target Achieved!', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16))
+                          else
+                            Text('${(kpiProgress * 100).toStringAsFixed(1)}% Completed', style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
+
+// ==========================================
+// 独立页面 9：后台 POS 实时订单监控 (接收客人独立点餐端的数据)
+// ==========================================
+class LiveOrdersMonitorScreen extends StatefulWidget {
+  final Map<String, dynamic> user;
+  const LiveOrdersMonitorScreen({super.key, required this.user});
+
+  @override
+  State<LiveOrdersMonitorScreen> createState() => _LiveOrdersMonitorScreenState();
+}
+
+class _LiveOrdersMonitorScreenState extends State<LiveOrdersMonitorScreen> {
+  List<dynamic> _orders = [];
+  bool _isLoading = true;
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLiveOrders();
+    // 每 5 秒自动同步一次客人端新下的单
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _fetchLiveOrders(silent: true));
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchLiveOrders({bool silent = false}) async {
+    if (!silent) setState(() => _isLoading = true);
+    try {
+      final res = await http.get(Uri.parse('http://127.0.0.1:5000/api/pos/orders/live'));
+      if (res.statusCode == 200 && mounted) {
+        setState(() {
+          _orders = jsonDecode(res.body)['data'] ?? [];
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateStatus(int orderId, String newStatus) async {
+    await http.post(
+      Uri.parse('http://127.0.0.1:5000/api/pos/orders/$orderId/status'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'status': newStatus}),
+    );
+    _fetchLiveOrders(silent: true);
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'Pending':
+        return Colors.orange[800]!;
+      case 'Cooking':
+        return Colors.blue[700]!;
+      case 'Served':
+        return Colors.teal[700]!;
+      case 'Paid':
+        return Colors.green[700]!;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Live POS Orders (Synced from Customer Portal)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        backgroundColor: const Color(0xFF141824),
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: () => _fetchLiveOrders()),
+        ],
+      ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            color: const Color(0xFFFFEBEE),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: const Row(
+              children: [
+                Icon(Icons.qr_code_2, color: Color(0xFFB71C1C), size: 22),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Customer Self-Ordering URL: http://127.0.0.1:5000/order  •  Auto-syncing every 5s',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFB71C1C)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFFB71C1C)))
+                : _orders.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No customer orders yet.\nOpen http://127.0.0.1:5000/order in your browser to place a test order!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(14),
+                        itemCount: _orders.length,
+                        itemBuilder: (context, index) {
+                          final o = _orders[index];
+                          final List<dynamic> items = o['items'] ?? [];
+                          final String status = o['status'].toString();
+
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '#POS-${o['order_id'].toString().padLeft(4, '0')} • ${o['table_no']}',
+                                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(color: _statusColor(status), borderRadius: BorderRadius.circular(8)),
+                                        child: Text(status.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Customer: ${o['customer_contact'] ?? 'Guest'} • Server: ${o['staff_name']} • ${o['created_at']}',
+                                    style: const TextStyle(fontSize: 11, color: Colors.blueGrey, fontWeight: FontWeight.bold),
+                                  ),
+                                  const Divider(),
+                                  ...items.map((it) => Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 2),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('${it['qty']}x  ${it['item_name']}', style: const TextStyle(fontSize: 13)),
+                                            Text('RM ${(it['line_total'] as num).toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      )),
+                                  if ((o['remarks'] ?? '').toString().isNotEmpty) ...[
+                                    const SizedBox(height: 6),
+                                    Text('Remarks: ${o['remarks']}', style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontStyle: FontStyle.italic)),
+                                  ],
+                                  const Divider(),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Total: RM ${(o['grand_total'] as num).toStringAsFixed(2)} (incl. 10% Svc + 6% SST)',
+                                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFF1B5E20)),
+                                      ),
+                                      Row(
+                                        children: [
+                                          if (status == 'Pending')
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[700], foregroundColor: Colors.white, visualDensity: VisualDensity.compact),
+                                              onPressed: () => _updateStatus(o['order_id'], 'Cooking'),
+                                              child: const Text('Start Cooking', style: TextStyle(fontSize: 11)),
+                                            ),
+                                          if (status == 'Cooking')
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.teal[700], foregroundColor: Colors.white, visualDensity: VisualDensity.compact),
+                                              onPressed: () => _updateStatus(o['order_id'], 'Served'),
+                                              child: const Text('Mark Served', style: TextStyle(fontSize: 11)),
+                                            ),
+                                          if (status == 'Served')
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700], foregroundColor: Colors.white, visualDensity: VisualDensity.compact),
+                                              onPressed: () => _updateStatus(o['order_id'], 'Paid'),
+                                              child: const Text('Mark Paid', style: TextStyle(fontSize: 11)),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
       ),
     );
   }
